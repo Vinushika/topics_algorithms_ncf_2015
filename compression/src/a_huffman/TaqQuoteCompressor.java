@@ -1,24 +1,34 @@
 package a_huffman;
 
 import java.util.Arrays;
+import java.nio.ByteBuffer; //for byte-ops
+import java.nio.charset.Charset; //for ASCII conversion from bytes
 
 public class TaqQuoteCompressor 
 {
 
-	private static String[] compressFileNames   = {"time-exchange.cmp","security.cmp","bid-price-size.cmp","ask-price.cmp","quote-cond.cmp","spaces.cmp","quote-codes.cmp","seq-number.cmp","misc-indexes.cmp","newlines.cmp"};
+	private static String[] compressFileNames   = {"time-exchange.cmp","security.cmp","bid-price-int.cmp","bid-price-float.cmp",
+		"bid-size.cmp","ask-price-int.cmp","ask-price-float.cmp","ask-size.cmp","quote-cond.cmp","spaces.cmp","quote-codes.cmp","seq-number.cmp","misc-indexes.cmp","newlines.cmp"};
 	//this String[] is used to make the file names for the compression of a zipped file, and for decompressing from our format.
-	private static int[]    compressByteAmounts = {10,16,18,18,1,4,2,16,11,2};
+	private static int[]    compressByteAmounts = {10,16,7,4,7,7,4,7,1,4,2,16,11,2};
 	//this one has the number of bytes we're eating for each of the files in compressFileNames
 	//first 10 bytes are time plus the exchange symbol
 	//next 16 bytes are the security symbol
 	//next 18 bytes are the bid price and bid size
+	//	- 7 bytes bid price (int part)
+	//	- 4 bytes bid price (float part)
+	//	- 7 bytes bid size (you can't buy fractional shares)
 	//next 18 bytes are ask price and ask size
+	//	- 7 bytes ask price (int part)
+	//	- 4 bytes ask price (float part)
+	//	- 7 bytes ask size (you can't buy fractional shares)
 	//next 1 byte is quote conditions
 	//next 4 bytes are empty space always according to the spec - this will save us a lot!
 	//next 2 bytes are all the letters describing which exchange is asking and buying
 	//next 16 bytes are the sequence number
 	//last 13 bytes are miscellaneous info and a bunch of spaces, plus 2 bytes worth of newline - it may be worth chunking up newline further as the newline char is ASCII 12, which only requires 4 bits.
-
+	
+	
 	private static void compress(String outdir, String path,String outfile) throws Exception{
 		//outdir is the directory to which we're reading/writing
 		//path is the path to the NORMAL ZIP FILE with taqmaster20131218
@@ -39,7 +49,41 @@ public class TaqQuoteCompressor
 			while(len > 0){
 				int current_offset = 0; //start at 0, increase by each of the byte amounts in the array
 				for(int j = 0;j<used_streams.length;j++){
+					/*
+					 * I'm commenting this part out because it breaks the current compression/decompression cycle.
+					 * It's 1 AM, I don't feel like handling the decompression half of this stuff right now
+					 * but the general gist of the solution is here
+					 * Leaving notes here: 
+					 * To convert back from a byte array of x (in our case 3) bytes
+					 * byte[] decompressed_bytes = Integer.parseInt(ByteBuffer.wrap(bytes).getInt()).toString().getBytes(Charset.forName("US-ASCII"))
+					 * the parseInt is needed so we can turn it into a proper digit string
+					 * the ByteBuffer stuff is needed to turn it into an int
+					 * toString makes string
+					 * getBytes makes it into a byte array and we need to specify the charset so it doesn't go UTF-8 and blow up the amount of
+					 * stuff we have in there because each UTF-8 char is 8 bytes and that's huge for our purposes
+					//here we branch out depending on whether we're in ask-price or bid-price
+					//I don't like hardcoding indices into my program, but it sure makes it faster when we iterate several thousand times.
+					boolean special_write = false; //make sure we don't double-write when we're doing special stuff to the data first
+					if(j> 1 && j < 8){
+						//right here is where we do things. Special things.
+						//we know our current offset, and how much compressByteAmounts tell us to read, so let's take those in and make an int
+						//out of the bytes
+						//first read in the digits
+						int iDigits = 0;
+						for (int digits_read=0;digits_read < compressByteAmounts[j];digits_read++){
+							iDigits = 10 *iDigits + buffer[current_offset+digits_read]; //read in a certain amount of bytes
+						}
+						//ok, theoretically now we have our int. So we know for a fact that the highest possible
+						//number we can have here is 9,999,999 < 16,777,216 = 2^24 = 3 bytes
+						//allocate 3 bytes, write this integer
+						byte[] stuff_to_write = ByteBuffer.allocate(3).putInt(iDigits).array();
+						//now we have these 3 bytes, and write the record
+						used_streams[j].writeRecord(stuff_to_write,0,3);//write the entire "new buffer" to the file
+						special_write = true;
+					}
+					if(!(special_write)){ */
 					used_streams[j].writeRecord(buffer, current_offset, compressByteAmounts[j]); //write to the file stream
+					//}
 					current_offset += compressByteAmounts[j]; // 
 				}
 				len = inputStreamDecode.readRecord(buffer,0,98);

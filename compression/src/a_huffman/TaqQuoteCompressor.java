@@ -76,8 +76,7 @@ public class TaqQuoteCompressor
 					if (j==0){
 						// write the next date difference
 						if (writtenFirstDate){
-							//+4 for the first date
-							used_streams[0].writeRecord(intToByteArray(de.getNextDate(),4),de.getNumEncrypted()*4+4,4);
+							used_streams[0].writeRecord(intToByteArray(de.getNextDate(),4),0,4);
 						}else{
 							// write the first date
 							used_streams[0].writeRecord(intToByteArray(de.getFirstDate(),4),0,4);

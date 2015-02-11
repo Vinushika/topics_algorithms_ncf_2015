@@ -177,21 +177,31 @@ public class TaqQuoteCompressor
 							//date = intToByteArray(dd.getNextDate(),9);
 						}
 						char[] first_d = Integer.valueOf(firstd).toString().toCharArray();
-						if(firstDateAdded){
+						if(count==0){
 							System.out.println(first_d);
 						}
 						int firstdlen = first_d.length; //same as String.length()
 						for(int m = 0; m < 9 - firstdlen; m ++){
 							buffer[m] = 48; //make it 0
+							if(count == 0){
+								System.out.println("(char) Buffer["+ m + "] is: " + (char)buffer[m]);
+								System.out.println("(byte) Buffer["+ m + "] is: " + buffer[m]);
+							}
 						}
 						for(int n = 9 - firstdlen; n < firstdlen; n++){
 							buffer[n] = (byte)first_d[n - (9 - firstdlen)];
+							if(count == 0){
+								System.out.println("(char) Buffer["+n+"] is: " + (char)buffer[n]);
+								System.out.println("(byte) Buffer["+ n + "] is: " + buffer[n]);
+							}
+							
 							
 						}
 						//date = intToByteArray(dd.getFirstDate(),9);
 						firstDateAdded = true;
 						//outputStreamDecode.writeRecord(date,0,9);
 						special_read = true;
+						bytesReadIn += 5; //4+1
 					}
 						
 					if(j > 1 && j < 8){

@@ -8,13 +8,13 @@ import java.nio.BufferOverflowException;
 public class TaqQuoteCompressor 
 {
 
-	private static String[] compressFileNames   = {"time-exchange.cmp","security.cmp","bid-price-int.cmp","bid-price-float.cmp",
+	private static String[] compressFileNames   = {"time.cmp","exchange-security.cmp","bid-price-int.cmp","bid-price-float.cmp",
 		"bid-size.cmp","ask-price-int.cmp","ask-price-float.cmp","ask-size.cmp","quote-cond.cmp","spaces.cmp","quote-codes.cmp","seq-number.cmp","misc-indexes.cmp","newlines.cmp"};
 	//this String[] is used to make the file names for the compression of a zipped file, and for decompressing from our format.
-	private static int[]    compressByteAmounts = {10,16,7,4,7,7,4,7,1,4,2,16,11,2};
+	private static int[]    compressByteAmounts = {9,17,7,4,7,7,4,7,1,4,2,16,11,2};
 	//this one has the number of bytes we're eating for each of the files in compressFileNames
-	//first 10 bytes are time plus the exchange symbol
-	//next 16 bytes are the security symbol
+	//first 9 bytes are time 
+	//next 17 bytes are the exchange symbol (1 byte) and the security symbol
 	//next 18 bytes are the bid price and bid size
 	//	- 7 bytes bid price (int part)
 	//	- 4 bytes bid price (float part)
@@ -48,12 +48,33 @@ public class TaqQuoteCompressor
 			}
 			//now iterate through the records
 			int len = inputStreamDecode.readRecord(buffer, 0,98); //each record is 98 bytes, so read 98
+			
+			DateEncrypter de = new DateEncrypter(inputStreamDecode);
+			ByteBuffer dbuf = null;
+			boolean writtenFirstDate = false;
+			
 			while(len > 0){
 				int current_offset = 0; //start at 0, increase by each of the byte amounts in the array
 				for(int j = 0;j<used_streams.length;j++){
 					//here we branch out depending on whether we're in ask-price or bid-price
 					//I don't like hardcoding indices into my program, but it sure makes it faster when we iterate several thousand times.
 					boolean special_write = false; //make sure we don't double-write when we're doing special stuff to the data first
+				
+					
+					if (j==0){
+						if (writtenFirstDate){
+							dbuf = ByteBuffer.allocate(1);
+							dbuf.putInt(de.getNextDate());
+							//+3 for the first date
+							used_streams[0].writeRecord(dbuf.array(),de.getNumEncrypted()+3,1);
+						}else{
+							dbuf = ByteBuffer.allocate(3);
+							dbuf.putInt(de.getFirstDate());
+							used_streams[0].writeRecord(dbuf.array(),0,3);
+							writtenFirstDate = true;
+						}
+					}
+					
 					if(j> 1 && j < 8){
 						//right here is where we do things. Special things.
 						//we know our current offset, and how much compressByteAmounts tell us to read, so let's take those in and make an int

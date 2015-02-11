@@ -5,11 +5,11 @@ import java.nio.ByteBuffer;
 /*
  Expected Use:
  Encrypting:
- create DateEncrypter. de = DateEncrypter(inputStreamDecode)
-  write the first date. whatEverYouDoToWrite(dh.getFirstDate())
-  then when the time comes, write the next date. whatEverYouDoToWrite(dh.getNextDate())
-
+ create DateEncrypter. de = new DateEncrypter(inputStreamDecode)
+  write the first date. whatEverYouDoToWrite(de.getFirstDate())
+  then when the time comes, write the next date. whatEverYouDoToWrite(d.getNextDate())
  */
+
 public class DateEncrypter {
 	private Integer firstDate = null; 
 	private Integer numEncrypted = 0;
@@ -31,6 +31,10 @@ public class DateEncrypter {
 	
 	public Integer getFirstDate(){
 		return firstDate;
+	}
+	
+	public int getNumEncrypted(){
+		return numEncrypted;
 	}
 
 	public Integer getNextDate(){

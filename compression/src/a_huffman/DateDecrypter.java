@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 /*
 Expected Use:
 Decrypting:
-create DateDecrypter. dd = DateDecrypter(datesStream)
+create DateDecrypter. dd = new DateDecrypter(datesStream)
  write the first date. whatEverYouDoToWrite(dd.getFirstDate())
  then when the time comes, write the next date. whatEverYouDoToWrite(dh.getNextDate())
 */
@@ -33,8 +33,8 @@ public class DateDecrypter {
 	}
 	
 	public Integer getNextDate(){
-		// +9 for the first date
-		len = datesStream.readRecord(buffer2, numDecrypted+9,1);
+		// +3 for the first date
+		len = datesStream.readRecord(buffer2, numDecrypted+3,1);
 		if (len!=1){
 			throw new IllegalArgumentException("Error: Could not read in another byte.");
 		}

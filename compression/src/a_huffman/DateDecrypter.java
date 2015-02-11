@@ -13,16 +13,16 @@ create DateDecrypter. dd = new DateDecrypter(datesStream)
 public class DateDecrypter {
 	private Integer firstDate = null; 
 	private Integer numDecrypted = 0;
-	private byte[] buffer1 = new byte[9];
+	private byte[] buffer1 = new byte[4];
 	private byte[] buffer2 = new byte[4];
 
 	private int len;
 	private DecompressStream datesStream = null;
 	
 	public DateDecrypter (DecompressStream datesStream){
-		len = datesStream.readRecord(buffer1, 0,9);
-		if (len !=9){
-			throw new IllegalArgumentException("Error: Input DecompressStream must be pointing to file of at least 9 bytes");
+		len = datesStream.readRecord(buffer1, 0,4);
+		if (len !=4){
+			throw new IllegalArgumentException("Error: Input DecompressStream must be pointing to file of at least 4 bytes");
 		} else{
 			this.datesStream = datesStream;
 			firstDate = ByteBuffer.wrap(buffer1).getInt(); 

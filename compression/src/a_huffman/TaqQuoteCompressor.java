@@ -3,6 +3,7 @@ package a_huffman;
 import java.util.Arrays;
 import java.nio.ByteBuffer; //for byte-ops
 import java.nio.charset.Charset; //for ASCII conversion from bytes
+import java.nio.BufferOverflowException;
 
 public class TaqQuoteCompressor 
 {
@@ -40,6 +41,7 @@ public class TaqQuoteCompressor
 		DecompressStream  inputStreamDecode = new DecompressStream(outdir,path,"taqmaster20131218");
 		//now we have the file we're looking into, so let's make CompressStreams for the fields
 		CompressStream[] used_streams = new CompressStream[compressFileNames.length];
+		int count = 0;
 		try{
 			for(int i = 0; i < compressFileNames.length;i++){
 				used_streams[i] = new CompressStream(outdir,outfile+"_"+compressFileNames[i],compressFileNames[i]); //we have to write multiple ZIP to preserve efficiency, since you can't write to ZipEntry
@@ -49,18 +51,6 @@ public class TaqQuoteCompressor
 			while(len > 0){
 				int current_offset = 0; //start at 0, increase by each of the byte amounts in the array
 				for(int j = 0;j<used_streams.length;j++){
-					/*
-					 * I'm commenting this part out because it breaks the current compression/decompression cycle.
-					 * It's 1 AM, I don't feel like handling the decompression half of this stuff right now
-					 * but the general gist of the solution is here
-					 * Leaving notes here: 
-					 * To convert back from a byte array of x (in our case 3) bytes
-					 * byte[] decompressed_bytes = Integer.parseInt(ByteBuffer.wrap(bytes).getInt()).toString().getBytes(Charset.forName("US-ASCII"))
-					 * the parseInt is needed so we can turn it into a proper digit string
-					 * the ByteBuffer stuff is needed to turn it into an int
-					 * toString makes string
-					 * getBytes makes it into a byte array and we need to specify the charset so it doesn't go UTF-8 and blow up the amount of
-					 * stuff we have in there because each UTF-8 char is 8 bytes and that's huge for our purposes
 					//here we branch out depending on whether we're in ask-price or bid-price
 					//I don't like hardcoding indices into my program, but it sure makes it faster when we iterate several thousand times.
 					boolean special_write = false; //make sure we don't double-write when we're doing special stuff to the data first
@@ -71,19 +61,36 @@ public class TaqQuoteCompressor
 						//first read in the digits
 						int iDigits = 0;
 						for (int digits_read=0;digits_read < compressByteAmounts[j];digits_read++){
-							iDigits = 10 *iDigits + buffer[current_offset+digits_read]; //read in a certain amount of bytes
+							iDigits = 10 *iDigits + (buffer[current_offset+digits_read]-48); //read in a certain amount of bytes
+						}
+						count++;
+						if(count == 29){
+							System.out.println(iDigits);
 						}
 						//ok, theoretically now we have our int. So we know for a fact that the highest possible
 						//number we can have here is 9,999,999 < 16,777,216 = 2^24 = 3 bytes
-						//allocate 3 bytes, write this integer
-						byte[] stuff_to_write = ByteBuffer.allocate(3).putInt(iDigits).array();
-						//now we have these 3 bytes, and write the record
-						used_streams[j].writeRecord(stuff_to_write,0,3);//write the entire "new buffer" to the file
-						special_write = true;
+						//And for the 4-byte fields we have
+						///9,999 < 2^16 = 2 bytes. Yes we can use less than 2 bytes, but we won't concern ourselves
+						//with that level of optimization. So allocate either 3 or 4
+						int amount_to_write = compressByteAmounts[j] == 7 ? 3 : 2;
+						byte[] stuff_to_write = new byte[amount_to_write];
+						for(int k =0;k<amount_to_write;k++){
+							//we have to write byte-by-byte into an array we allocate instead of doing things more easily
+							//I wanted to use ByteBuffer.putInt, but that writes 4 byte chunks, which makes our buffer overflow
+							//this code makes sure that the int value is 0 everywhere but at the last two positions
+							//then casts that to a byte, because at that point we're fine
+							//technically this is little-endian! What fun.
+							stuff_to_write[k] = (byte)((iDigits & 0x000000ff << 8*k) >> 8*k);
+							if(count == 29){
+								System.out.println("stuff_to_write[" + k + "] is: " +stuff_to_write[k]);
+							}
+						}
+						used_streams[j].writeRecord(stuff_to_write,0,amount_to_write);//write the entire "new buffer" to the file
+						special_write = true; //make sure we don't double-write
 					}
-					if(!(special_write)){ */
-					used_streams[j].writeRecord(buffer, current_offset, compressByteAmounts[j]); //write to the file stream
-					//}
+					if(!(special_write)){
+						used_streams[j].writeRecord(buffer, current_offset, compressByteAmounts[j]); //write to the file stream
+					}
 					current_offset += compressByteAmounts[j]; // 
 				}
 				len = inputStreamDecode.readRecord(buffer,0,98);
@@ -106,6 +113,7 @@ public class TaqQuoteCompressor
 		//path is the path to the file that was COMPRESSED BY THIS PROGRAM
 		//extractedFile is the path to a NORMAL ZIP FILE that we're writing with CompressStream
 		byte[] buffer = new byte[128];
+		int count=0;
 		CompressStream outputStreamDecode = new   CompressStream(outdir,extractedFile,"taqmaster20131218");
 		//do the exact same thing, but instead of opening a [] of CompressStreams, open up a [] of DecompressStreams
 		DecompressStream[] used_streams   = new DecompressStream[compressFileNames.length];
@@ -122,8 +130,67 @@ public class TaqQuoteCompressor
 				int bytesReadIn = len;
 				for(int j = 1;j<compressFileNames.length;j++){
 					//go through each of the files we compressed
-					bytesReadIn += used_streams[j].readRecord(buffer, bytesReadIn, compressByteAmounts[j]);
+					boolean special_read = false;
+					if(j > 1 && j < 8){
+						//so we aren't reading in the same amounts! We have to be careful
+						int bytes_to_read = (compressByteAmounts[j] == 7) ? 3 : 2;
+						byte[] coded_number = new byte[bytes_to_read]; //we need to make sure we can read this correctly
+						used_streams[j].readRecord(coded_number, 0, bytes_to_read); //read the amount we need to decompress - note we don't return to anywhere because these records are not at the end
+						//therefore we don't need a bytesReadIn == 0 check
+						int number_read_in = 0;
+						for(int l=0; l < bytes_to_read;l++){
+							if(count == 28){
+								System.out.println("Read in at index " + l + " the byte " + coded_number[l]);
+							}
+							number_read_in |= coded_number[l] << 8*l; //shift by one byte so that we're in the right spot
+							//we need to do this to avoid BufferUnderflowException from ByteBuffer because it's dumb
+						}
+						//System.out.println(number_read_in);
+				//		if(count < 100){
+					//		System.out.println(number_read_in);
+							count++;
+				//		}
+						if(count == 29){
+							System.out.println(number_read_in);
+							System.out.println("Number read in shifted a byte: " + (number_read_in >> 8));
+						}
+						//ok, now we have an int. So make it a string.
+						String number_string = Integer.valueOf(number_read_in).toString();
+						char[] number_chars = number_string.toCharArray();
+						if(count == 29){
+							System.out.println(number_chars);
+						}
+						int number_length = number_string.length();
+						byte[] decompressed_bytes = new byte[compressByteAmounts[j]];
+						for(int m=0;m<compressByteAmounts[j] - number_length;m++){ //middle argument should always be >= 0!!
+							decompressed_bytes[m] = 48; //make it "0"
+						}
+						for(int n=compressByteAmounts[j] - number_length;n<compressByteAmounts[j];n++){
+							decompressed_bytes[n] = (byte)number_chars[n - (compressByteAmounts[j] - number_length)];
+							if(count == 29){
+								System.out.println("Decompressed bytes " + n + " is: " + decompressed_bytes[n]);
+								System.out.println("CBA[n] - n - 1 is:" + (compressByteAmounts[j] - n - 1));
+							}
+						}
+						//the line above is complex, see comments below
+						//now we have our bytes back in normal form, so let's shove them in to our buffer
+						for(int k = 0; k < decompressed_bytes.length;k++){
+							buffer[bytesReadIn+k] = decompressed_bytes[k]; //make sure you read in at the proper offset
+						}
+						bytesReadIn += compressByteAmounts[j]; //we read correctly! I don't think we absolutely need to do this, but I'm doing it for safety
+						special_read = true;
+					}
+					if(!(special_read)){
+						bytesReadIn += used_streams[j].readRecord(buffer, bytesReadIn, compressByteAmounts[j]); //make sure we don't double-read 
+					}
 				}
+				/*
+				 * To convert back from a byte array of x (in our case 3 or 2) bytes
+				 * byte[] decompressed_bytes = Integer.parseInt(ByteBuffer.wrap(bytes).getInt()).toString().getBytes(Charset.forName("US-ASCII"))
+				 * toString makes string
+				 * getBytes makes it into a byte array and we need to specify the charset so it doesn't go UTF-8 and blow up the amount of
+				 * stuff we have in there because each UTF-8 char is 8 bytes and that's huge for our purposes
+				 */
 				//we're done reading in all the compressed files, so let's write the record
 				outputStreamDecode.writeRecord(buffer,0,98); //write 98-byte record
 				len = used_streams[0].readRecord(buffer, 0, compressByteAmounts[0]); //start over with the next record

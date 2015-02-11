@@ -5,23 +5,21 @@ import java.nio.ByteBuffer;
 /*
  Expected Use:
  Encrypting:
- create DateHandler. dh = DateHandler(inputStreamDecode)
+ create DateEncrypter. de = DateEncrypter(inputStreamDecode)
   write the first date. whatEverYouDoToWrite(dh.getFirstDate())
   then when the time comes, write the next date. whatEverYouDoToWrite(dh.getNextDate())
- 
- Decrypting:
-  create DateHandler. dh = DateHandler(inputStreamDecode)
 
  */
-public class DateHandler {
+public class DateEncrypter {
 	public Integer firstDate = null; 
 	public Integer numEncrypted = 0;
 	byte[] buffer1 = new byte[9];
 	Integer currentDate = null;
 	DecompressStream inputStreamDecode = null;
 	int len;
+	CompressStream outputStreamEncode = null;
 
-	public DateHandler (DecompressStream inputStreamDecode){
+	public DateEncrypter (DecompressStream inputStreamDecode){
 		len = inputStreamDecode.readRecord(buffer1, 0,9);
 		if (len !=9){
 			throw new IllegalArgumentException("Error: Input DecompressStream must be pointing to file of at least 9 bytes");

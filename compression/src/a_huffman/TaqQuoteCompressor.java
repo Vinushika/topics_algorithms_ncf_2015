@@ -29,6 +29,11 @@ public class TaqQuoteCompressor
 	//next 16 bytes are the sequence number
 	//last 13 bytes are miscellaneous info and a bunch of spaces, plus 2 bytes worth of newline - it may be worth chunking up newline further as the newline char is ASCII 12, which only requires 4 bits.
 	
+	private static byte[] intToByteArray(int i,int numBytes){
+		ByteBuffer dbuf = ByteBuffer.allocate(numBytes);
+		dbuf.putInt(i);
+		return dbuf.array();
+	}
 	
 	private static void compress(String outdir, String path,String outfile) throws Exception{
 		//outdir is the directory to which we're reading/writing
@@ -50,7 +55,6 @@ public class TaqQuoteCompressor
 			int len = inputStreamDecode.readRecord(buffer, 0,98); //each record is 98 bytes, so read 98
 			
 			DateEncrypter de = new DateEncrypter(inputStreamDecode);
-			ByteBuffer dbuf = null;
 			boolean writtenFirstDate = false;
 			
 			while(len > 0){
@@ -62,15 +66,13 @@ public class TaqQuoteCompressor
 				
 					
 					if (j==0){
+						// write the next date difference
 						if (writtenFirstDate){
-							dbuf = ByteBuffer.allocate(1);
-							dbuf.putInt(de.getNextDate());
 							//+3 for the first date
-							used_streams[0].writeRecord(dbuf.array(),de.getNumEncrypted()+3,1);
+							used_streams[0].writeRecord(intToByteArray(de.getNextDate(),1),de.getNumEncrypted()+3,1);
 						}else{
-							dbuf = ByteBuffer.allocate(3);
-							dbuf.putInt(de.getFirstDate());
-							used_streams[0].writeRecord(dbuf.array(),0,3);
+							// write the first date
+							used_streams[0].writeRecord(intToByteArray(de.getFirstDate(),3),0,1);
 							writtenFirstDate = true;
 						}
 					}
@@ -149,7 +151,11 @@ public class TaqQuoteCompressor
 			while(len > 0){
 				//we can use len to keep track of this, however I'll set it to a different variable so we don't get confused
 				int bytesReadIn = len;
-				for(int j = 1;j<compressFileNames.length;j++){
+				DateDecrypter dd = new DateDecrypter(used_streams[0]);
+				
+				//intToByteArray(dd.getFirstDate(),3)
+				
+				for(int j = 1;j <compressFileNames.length;j++){
 					//go through each of the files we compressed
 					boolean special_read = false;
 					if(j > 1 && j < 8){

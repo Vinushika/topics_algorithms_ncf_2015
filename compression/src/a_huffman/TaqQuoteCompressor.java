@@ -72,7 +72,7 @@ public class TaqQuoteCompressor
 							used_streams[0].writeRecord(intToByteArray(de.getNextDate(),1),de.getNumEncrypted()+3,1);
 						}else{
 							// write the first date
-							used_streams[0].writeRecord(intToByteArray(de.getFirstDate(),3),0,1);
+							used_streams[0].writeRecord(intToByteArray(de.getFirstDate(),9),0,9);
 							writtenFirstDate = true;
 						}
 					}
@@ -271,7 +271,7 @@ public class TaqQuoteCompressor
 			if(args[2].equals("compress")){
 				//call our compressor method
 				System.out.println("Compressing...");
-				compress(outdir,args[0],"EQY_US_ALL_BBO_20131218_fields");
+				
 
 			}else if(args[2].equals("extract")){
 				System.out.println("Decompressing...");

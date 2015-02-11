@@ -11,13 +11,13 @@ import java.nio.ByteBuffer;
 
  */
 public class DateEncrypter {
-	public Integer firstDate = null; 
-	public Integer numEncrypted = 0;
-	byte[] buffer1 = new byte[9];
-	Integer currentDate = null;
-	DecompressStream inputStreamDecode = null;
-	int len;
-	CompressStream outputStreamEncode = null;
+	private Integer firstDate = null; 
+	private Integer numEncrypted = 0;
+	private byte[] buffer1 = new byte[9];
+	private Integer currentDate = null;
+	private DecompressStream inputStreamDecode = null;
+	private int len;
+	private CompressStream outputStreamEncode = null;
 
 	public DateEncrypter (DecompressStream inputStreamDecode){
 		len = inputStreamDecode.readRecord(buffer1, 0,9);
@@ -39,6 +39,7 @@ public class DateEncrypter {
 			throw new IllegalArgumentException("Error: Input DecompressStream must be pointing to file of at least 9 bytes");
 		} else{
 			currentDate = ByteBuffer.wrap(buffer1).getInt() - firstDate;
+			numEncrypted+=1;
 			return currentDate;
 		}
 

@@ -58,7 +58,7 @@ public class DecompressStream {
                 e.printStackTrace();
             }
         }
-       // System.out.println("File: "+zipName+" ; # of records: "+iCountRecord); //make it easier to read times
+       System.out.println("File: "+zipName+" ; # of records: "+iCountRecord); //make it easier to read times
     }
 
 }

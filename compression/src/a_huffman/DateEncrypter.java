@@ -34,7 +34,7 @@ public class DateEncrypter {
 	}
 
 	public Integer getNextDate(){
-		len = inputStreamDecode.readRecord(buffer1,numEncrypted*9,9);
+		len = inputStreamDecode.readRecord(buffer1,numEncrypted*98,9);
 		if (len != 9){
 			throw new IllegalArgumentException("Error: Input DecompressStream must be pointing to file of at least 9 bytes");
 		} else{

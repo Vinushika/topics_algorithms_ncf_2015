@@ -27,6 +27,8 @@ import java.util.Set;
  */
 
 
+//Dictionaries for Huffman Code...not actually used due to complexity of single-bit I/O
+
 public class MappingChars {
 
 	private static HashMap<Byte, Integer> createMap(ArrayList<Byte> arr) {

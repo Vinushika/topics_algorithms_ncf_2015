@@ -4,6 +4,12 @@ import java.util.Arrays;
 import java.nio.ByteBuffer; //for byte-ops
 import java.nio.charset.Charset; //for ASCII conversion from bytes
 import java.nio.BufferOverflowException;
+
+//This is the meat of the code.
+
+//Sarah Russell did the dictionaries and huffman codes (which may not have ended up being used because of java bit writing issues)
+//David Weinstein did the date compressors
+//Vinushka Schalk compressed the bid and ask prices/sizes
 public class TaqQuoteCompressor
 {
 	private static String[] compressFileNames = {"time-exchange.cmp","security.cmp","bid-price-int.cmp","bid-price-float.cmp",

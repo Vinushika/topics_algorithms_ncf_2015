@@ -61,6 +61,7 @@ public class TaqQuoteCompressor
 					//I don't like hardcoding indices into my program, but it sure makes it faster when we iterate several thousand times.
 					boolean special_write = false; //make sure we don't double-write when we're doing special stuff to the data first
 					
+
 //					if (j==0){
 //						// write the next date difference
 //						if (writtenFirstDate){
@@ -72,6 +73,7 @@ public class TaqQuoteCompressor
 //							writtenFirstDate = true;
 //						}
 //					}
+
 					if(j> 1 && j < 8){
 						//right here is where we do things. Special things.
 						//we know our current offset, and how much compressByteAmounts tell us to read, so let's take those in and make an int
@@ -151,6 +153,7 @@ public class TaqQuoteCompressor
 					//go through each of the files we compressed
 					boolean special_read = false;
 					
+
 //					if (j==0){
 //						// write the next date difference
 //						if (writtenFirstDate){

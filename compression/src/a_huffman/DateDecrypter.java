@@ -33,8 +33,8 @@ public class DateDecrypter {
 	}
 	
 	public Integer getNextDate(){
-		// +3 for the first date
-		len = datesStream.readRecord(buffer2, numDecrypted+3,1);
+		// +4 for the first date
+		len = datesStream.readRecord(buffer2, numDecrypted+4,1);
 		if (len!=1){
 			throw new IllegalArgumentException("Error: Could not read in another byte.");
 		}

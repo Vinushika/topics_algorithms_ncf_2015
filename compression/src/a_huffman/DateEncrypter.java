@@ -20,13 +20,13 @@ public class DateEncrypter {
 	private CompressStream outputStreamEncode = null;
 
 	public DateEncrypter (DecompressStream inputStreamDecode){
-//		len = inputStreamDecode.readRecord(buffer1, 0,9);
-//		if (len !=9){
-//			throw new IllegalArgumentException("Error: Input DecompressStream must be pointing to file of at least 9 bytes");
-//		} else{
+		len = inputStreamDecode.readRecord(buffer1, 0,9);
+		if (len !=9){
+			throw new IllegalArgumentException("Error: Input DecompressStream must be pointing to file of at least 9 bytes");
+		} else{
 			this.inputStreamDecode = inputStreamDecode;
-		//	firstDate = ByteBuffer.wrap(buffer1).getInt(); 
-		//}
+		 firstDate = ByteBuffer.wrap(buffer1).getInt(); 
+		}
 	}
 	
 	public Integer getFirstDate(){

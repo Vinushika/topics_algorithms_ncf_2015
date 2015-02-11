@@ -20,13 +20,13 @@ public class DateDecrypter {
 	private DecompressStream datesStream = null;
 	
 	public DateDecrypter (DecompressStream datesStream){
-//		len = datesStream.readRecord(buffer1, 0,9);
-//		if (len !=9){
-//			throw new IllegalArgumentException("Error: Input DecompressStream must be pointing to file of at least 9 bytes");
-//		} else{
+		len = datesStream.readRecord(buffer1, 0,9);
+		if (len !=9){
+			throw new IllegalArgumentException("Error: Input DecompressStream must be pointing to file of at least 9 bytes");
+		} else{
 			this.datesStream = datesStream;
 			firstDate = ByteBuffer.wrap(buffer1).getInt(); 
-//		}
+		}
 	}
 	public Integer getFirstDate(){
 		return firstDate;
@@ -34,7 +34,7 @@ public class DateDecrypter {
 	
 	public Integer getNextDate(){
 		// +4 for the first date
-		len = datesStream.readRecord(buffer2, numDecrypted+4,1);
+		len = datesStream.readRecord(buffer2, numDecrypted+4,4);
 		if (len!=1){
 			throw new IllegalArgumentException("Error: Could not read in another byte.");
 		}

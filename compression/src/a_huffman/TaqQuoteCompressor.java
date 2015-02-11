@@ -4,15 +4,18 @@ import java.util.Arrays;
 import java.nio.ByteBuffer; //for byte-ops
 import java.nio.charset.Charset; //for ASCII conversion from bytes
 import java.nio.BufferOverflowException;
+
+import a_huffman.DateDecrypter;
+import a_huffman.DecompressStream;
 public class TaqQuoteCompressor
 {
-	private static String[] compressFileNames = {"time-exchange.cmp","security.cmp","bid-price-int.cmp","bid-price-float.cmp",
+	private static String[] compressFileNames = {"time.cmp","exchange-security.cmp","bid-price-int.cmp","bid-price-float.cmp",
 		"bid-size.cmp","ask-price-int.cmp","ask-price-float.cmp","ask-size.cmp","quote-cond.cmp","spaces.cmp","quote-codes.cmp","seq-number.cmp","misc-indexes.cmp","newlines.cmp"};
 	//this String[] is used to make the file names for the compression of a zipped file, and for decompressing from our format.
 	private static int[] compressByteAmounts = {9,17,7,4,7,7,4,7,1,4,2,16,11,2};
 	//this one has the number of bytes we're eating for each of the files in compressFileNames
-	//first 9 bytes are time plus the exchange symbol
-	//next 17 bytes are the security symbol
+	//first 9 bytes are time 
+	//next 17 bytes are the exchange symbol byte followed by the security symbol
 	//next 18 bytes are the bid price and bid size
 	// - 7 bytes bid price (int part)
 	// - 4 bytes bid price (float part)
@@ -43,6 +46,8 @@ public class TaqQuoteCompressor
 		byte[] buffer = new byte[128];
 		//first, let's open up the file we want to compress more
 		DecompressStream inputStreamDecode = new DecompressStream(outdir,path,"taqmaster20131218");
+		DecompressStream inputStreamDecode2 = new DecompressStream(outdir,path,"taqmaster20131218");
+
 		//now we have the file we're looking into, so let's make CompressStreams for the fields
 		CompressStream[] used_streams = new CompressStream[compressFileNames.length];
 		int count = 0;
@@ -52,8 +57,8 @@ public class TaqQuoteCompressor
 			}
 			//now iterate through the records
 			int len = inputStreamDecode.readRecord(buffer, 0,98); //each record is 98 bytes, so read 98
-//			DateEncrypter de = new DateEncrypter(inputStreamDecode);
-//			boolean writtenFirstDate = false;
+			DateEncrypter de = new DateEncrypter(inputStreamDecode2);
+			boolean writtenFirstDate = false;
 			while(len > 0){
 				int current_offset = 0; //start at 0, increase by each of the byte amounts in the array
 				for(int j = 0;j<used_streams.length;j++){
@@ -62,17 +67,18 @@ public class TaqQuoteCompressor
 					boolean special_write = false; //make sure we don't double-write when we're doing special stuff to the data first
 					
 
-//					if (j==0){
-//						// write the next date difference
-//						if (writtenFirstDate){
-//							//+3 for the first date
-//							used_streams[0].writeRecord(intToByteArray(de.getNextDate(),1),de.getNumEncrypted()+3,1);
-//						}else{
-//							// write the first date
-//							used_streams[0].writeRecord(intToByteArray(de.getFirstDate(),3),0,1);
-//							writtenFirstDate = true;
-//						}
-//					}
+					if (j==0){
+						// write the next date difference
+						if (writtenFirstDate){
+							//+4 for the first date
+							used_streams[0].writeRecord(intToByteArray(de.getNextDate(),4),de.getNumEncrypted()*4+4,4);
+						}else{
+							// write the first date
+							used_streams[0].writeRecord(intToByteArray(de.getFirstDate(),4),0,4);
+							writtenFirstDate = true;
+						}
+						special_write = true;
+					}
 
 					if(j> 1 && j < 8){
 						//right here is where we do things. Special things.
@@ -140,31 +146,33 @@ public class TaqQuoteCompressor
 			for(int i = 0; i < compressFileNames.length;i++){
 				used_streams[i] = new DecompressStream(outdir,path+"_"+compressFileNames[i],compressFileNames[i]); //open each of the files we used for compression
 			}
+			DecompressStream datesStream  = new DecompressStream(outdir,path+"_"+compressFileNames[0],compressFileNames[0]); //open each of the files we used for compression
+
 			//now iterate
 			int len = used_streams[0].readRecord(buffer, 0, compressByteAmounts[0]); //read the first record from the first file
 			//they all have the same number of records, but they do NOT each have the same length. Thus the while loop below
 			//should still stop in time
-//			DateEncrypter de = new DateEncrypter(inputStreamDecode);
-//			boolean writtenFirstDate = false;
+			DateDecrypter dd = new DateDecrypter(datesStream);
+			Boolean firstDateAdded = false;
+			boolean special_read = false;
 			while(len > 0){
 				//we can use len to keep track of this, however I'll set it to a different variable so we don't get confused
 				int bytesReadIn = len;
 				for(int j = 1;j<compressFileNames.length;j++){
 					//go through each of the files we compressed
-					boolean special_read = false;
 					
-
-//					if (j==0){
-//						// write the next date difference
-//						if (writtenFirstDate){
-//							//+3 for the first date
-//							used_streams[0].writeRecord(intToByteArray(de.getNextDate(),1),de.getNumEncrypted()+3,1);
-//						}else{
-//							// write the first date
-//							used_streams[0].writeRecord(intToByteArray(de.getFirstDate(),3),0,1);
-//							writtenFirstDate = true;
-//						}
-//					}
+					if (j==0){
+						byte[] date;
+						if (!firstDateAdded){
+							date = intToByteArray(dd.getFirstDate(),9);
+							firstDateAdded = true;
+						} else{
+							date = intToByteArray(dd.getNextDate(),9);
+						}
+						outputStreamDecode.writeRecord(buffer,0,9);
+						special_read = true;
+					}
+						
 					if(j > 1 && j < 8){
 						//so we aren't reading in the same amounts! We have to be careful
 						int bytes_to_read = (compressByteAmounts[j] == 7) ? 3 : 2;
@@ -228,7 +236,7 @@ public class TaqQuoteCompressor
 				 * stuff we have in there because each UTF-8 char is 8 bytes and that's huge for our purposes
 				 */
 				//we're done reading in all the compressed files, so let's write the record
-				outputStreamDecode.writeRecord(buffer,0,98); //write 98-byte record
+				outputStreamDecode.writeRecord(buffer,9,89); //write 98-byte record
 				len = used_streams[0].readRecord(buffer, 0, compressByteAmounts[0]); //start over with the next record
 			}
 		}finally{

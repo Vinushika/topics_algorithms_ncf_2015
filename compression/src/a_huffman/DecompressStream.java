@@ -23,10 +23,8 @@ public class DecompressStream {
             }
             assert(entry != null);
         } catch (FileNotFoundException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
@@ -34,7 +32,6 @@ public class DecompressStream {
     int readRecord(byte[] bytes, int offset, int nBytes) {
         int bytesReadIn = 0;
         try {
-            //assert( nBytes == 98 ); // We are only doing 98 byte chunks - this assumption does not hold necessarily
             bytesReadIn          = inStream.read(bytes, offset            , nBytes            );
             if (    bytesReadIn >=      0) { // it is -1 when at the end of a file
                 if (bytesReadIn  < nBytes) {
@@ -43,7 +40,6 @@ public class DecompressStream {
                 iCountRecord++;
             }
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return bytesReadIn;
@@ -54,7 +50,6 @@ public class DecompressStream {
             try {
                 inStream   .close();
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }

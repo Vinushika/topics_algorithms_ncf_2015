@@ -154,28 +154,43 @@ public class TaqQuoteCompressor
 			DecompressStream datesStream  = new DecompressStream(outdir,path+"_"+compressFileNames[0],compressFileNames[0]); //open each of the files we used for compression
 
 			//now iterate
-			int len = used_streams[0].readRecord(buffer, 0, compressByteAmounts[0]); //read the first record from the first file
+			int len = used_streams[0].readRecord(buffer, 0, 4); //read the first record from the first file
 			//they all have the same number of records, but they do NOT each have the same length. Thus the while loop below
 			//should still stop in time
 			DateDecrypter dd = new DateDecrypter(datesStream);
 			Boolean firstDateAdded = false;
-
 			while(len > 0){
 				//we can use len to keep track of this, however I'll set it to a different variable so we don't get confused
 				int bytesReadIn = len;
-				for(int j = 1;j<compressFileNames.length;j++){
+				for(int j = 0;j<compressFileNames.length;j++){
 					//go through each of the files we compressed
 					boolean special_read = false;
 					
 					if (j==0){
-						byte[] date;
+						int firstd = 0;
 						if (!firstDateAdded){
-							date = intToByteArray(dd.getFirstDate(),9);
+							firstd = dd.getFirstDate();
+							//date = intToByteArray(dd.getFirstDate(),9);
 							firstDateAdded = true;
 						} else{
-							date = intToByteArray(dd.getNextDate(),9);
+							firstd = dd.getNextDate();
+							//date = intToByteArray(dd.getNextDate(),9);
 						}
-						outputStreamDecode.writeRecord(buffer,0,9);
+						char[] first_d = Integer.valueOf(firstd).toString().toCharArray();
+						if(firstDateAdded){
+							System.out.println(first_d);
+						}
+						int firstdlen = first_d.length; //same as String.length()
+						for(int m = 0; m < 9 - firstdlen; m ++){
+							buffer[m] = 48; //make it 0
+						}
+						for(int n = 9 - firstdlen; n < firstdlen; n++){
+							buffer[n] = (byte)first_d[n - (9 - firstdlen)];
+							
+						}
+						//date = intToByteArray(dd.getFirstDate(),9);
+						firstDateAdded = true;
+						//outputStreamDecode.writeRecord(date,0,9);
 						special_read = true;
 					}
 						
@@ -242,8 +257,8 @@ public class TaqQuoteCompressor
 				 * stuff we have in there because each UTF-8 char is 8 bytes and that's huge for our purposes
 				 */
 				//we're done reading in all the compressed files, so let's write the record
-				outputStreamDecode.writeRecord(buffer,0,89); //write 98-byte record
-				len = used_streams[0].readRecord(buffer, 0, compressByteAmounts[0]); //start over with the next record
+				outputStreamDecode.writeRecord(buffer,0,98); //write 98-byte record
+				len = used_streams[0].readRecord(buffer, 0, 4); //start over with the next record
 			}
 		}finally{
 			//close everything

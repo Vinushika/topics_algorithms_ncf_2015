@@ -19,7 +19,7 @@ public class DateEncrypter {
 	Integer currentDate = null;
 	DecompressStream inputStreamDecode = null;
 	int len;
-    boolean once = true;
+//    boolean once = true;
 	CompressStream outputStreamEncode = null;
 
 	public DateEncrypter (DecompressStream inputStreamDecode) throws IOException{
@@ -28,9 +28,14 @@ public class DateEncrypter {
 			throw new IllegalArgumentException("Error: Input DecompressStream must be pointing to file of at least 9 bytes");
 		} else{
 			this.inputStreamDecode = inputStreamDecode;
-            firstDate = Integer.parseInt(new String(buffer1, "UTF-8"));
+            int iDigits = 0;
+            for (int digits_read=0;digits_read < 9;digits_read++){
+                iDigits = 10 *iDigits + (buffer1[digits_read]-48); //read in a certain amount of bytes
+            }
+            firstDate = iDigits;
+            		//Integer.parseInt(new String(buffer1, "UTF-8"));
 
-			//firstDate = ByteBuffer.wrap(buffer1).getInt();
+//			firstDate = ByteBuffer.wrap(buffer1).getInt();
 			inputStreamDecode.readRecord(dump, 0, 89);
 		}
 	}
@@ -46,13 +51,18 @@ public class DateEncrypter {
         if (len != 9){
 			throw new IllegalArgumentException("Error: Input DecompressStream must be pointing to file of at least 9 bytes");
 		} else{
-            currentDate = Integer.parseInt(new String(buffer1, "UTF-8")) - firstDate;
-            if (once){
-             System.out.println("currentDate");
-            System.out.println(currentDate);
-            once = false;
+            int iDigits = 0;
+            for (int digits_read=0;digits_read < 9;digits_read++){
+                iDigits = 10 *iDigits + (buffer1[digits_read]-48); //read in a certain amount of bytes
             }
-			//currentDate = ByteBuffer.wrap(buffer1).getInt() - firstDate;
+            currentDate = iDigits - firstDate;
+            //currentDate = Integer.parseInt(new String(buffer1, "UTF-8")) - firstDate;
+//            if (once){
+//             System.out.println("currentDate");
+//            System.out.println(currentDate);
+//            once = false;
+//            }
+			currentDate = iDigits - firstDate;
 			inputStreamDecode.readRecord(dump, 0, 89);
 			return currentDate;
 		}

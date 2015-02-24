@@ -280,21 +280,98 @@ public class Controller {
             if ( isCrossSection ) view.crossSection();
         } else { // lastVisitedMeshView == null
             if  ( e.getCode()== KeyCode.A  ) {// A is A in QWERTY or Dvorak
-                MeshView  leftMesh = view.loadMeshView(); // Load up LemurHandLeft.stl        
-                MeshView rightMesh = view.loadMeshView(); // Load up LemurHandRight.stl
-                rightMesh.getTransforms().add( new Translate(0,-15,0));
-                rightMesh.getTransforms().add( new Translate(-43,0,0));
-                rightMesh.getTransforms().add( new Rotate(10,Rotate.X_AXIS) );
+            	 MeshView  leftMesh = view.loadMeshView(); // Load up LemurHandLeft.stl        
+                 MeshView rightMesh = view.loadMeshView(); // Load up LemurHandRight.stl
+                 rightMesh.getTransforms().add( new Translate(0,-15,0));// new Translate(0,-15,0));// 
+                 rightMesh.getTransforms().add( new Translate(-43,0,0));// new Translate(-45,0,0));// 
+                 rightMesh.getTransforms().add( new Rotate(10,Rotate.X_AXIS) );
 
-                // Start the timing
-                long startTime = System.nanoTime();
-                view.isCollision(false);
-                // Finish the timing
-                long endTime  = System.nanoTime();
-                long duration = (endTime - startTime);  //divide by 1000000 to get milliseconds.
-                long durSec   =  duration/1000000000L;
-                long durMilli = (duration-durSec*1000000000L)/1000000;
-                System.out.println("This comparison took "+duration+" nanoseconds. ("+durSec+"."+durMilli+" seconds)");
+                 long sumOfDurations = 0;
+                 {
+                     // Start the timing
+                     long startTime = System.nanoTime();
+                     view.isCollision(false);
+                     // Finish the timing
+                     long endTime  = System.nanoTime();
+                     long duration = (endTime - startTime);  //divide by 1000000 to get milliseconds.
+                     long durSec   =  duration/1000000000L;
+                     long durMilli = (duration-durSec*1000000000L)/1000000;
+                     System.out.println("This comparison took "+duration+" nanoseconds. ("+durSec+"."+durMilli+" seconds)");
+                     sumOfDurations += duration;
+                 }
+
+                 view.rotate(  72, new Point3D(1,1,0), isCrossSection);
+                 {
+                     // Start the timing
+                     long startTime = System.nanoTime();
+                     view.isCollision(false);
+                     // Finish the timing
+                     long endTime  = System.nanoTime();
+                     long duration = (endTime - startTime);  //divide by 1000000 to get milliseconds.
+                     long durSec   =  duration/1000000000L;
+                     long durMilli = (duration-durSec*1000000000L)/1000000;
+                     System.out.println("This comparison took "+duration+" nanoseconds. ("+durSec+"."+durMilli+" seconds)");
+                     sumOfDurations += duration;
+                 }
+
+                 view.rotate(  43, new Point3D(0,1,0), isCrossSection);
+                 {
+                     // Start the timing
+                     long startTime = System.nanoTime();
+                     view.isCollision(false);
+                     // Finish the timing
+                     long endTime  = System.nanoTime();
+                     long duration = (endTime - startTime);  //divide by 1000000 to get milliseconds.
+                     long durSec   =  duration/1000000000L;
+                     long durMilli = (duration-durSec*1000000000L)/1000000;
+                     System.out.println("This comparison took "+duration+" nanoseconds. ("+durSec+"."+durMilli+" seconds)");
+                     sumOfDurations += duration;
+                 }
+
+                 view.rotate(  47, new Point3D(0,1,1), isCrossSection);
+                 {
+                     // Start the timing
+                     long startTime = System.nanoTime();
+                     view.isCollision(false);
+                     // Finish the timing
+                     long endTime  = System.nanoTime();
+                     long duration = (endTime - startTime);  //divide by 1000000 to get milliseconds.
+                     long durSec   =  duration/1000000000L;
+                     long durMilli = (duration-durSec*1000000000L)/1000000;
+                     System.out.println("This comparison took "+duration+" nanoseconds. ("+durSec+"."+durMilli+" seconds)");
+                     sumOfDurations += duration;
+                 }
+
+                 leftMesh.getTransforms().add( new Translate(2,0,0));// new Translate(-45,0,0));// 
+                 {
+                     // Start the timing
+                     long startTime = System.nanoTime();
+                     view.isCollision(false);
+                     // Finish the timing
+                     long endTime  = System.nanoTime();
+                     long duration = (endTime - startTime);  //divide by 1000000 to get milliseconds.
+                     long durSec   =  duration/1000000000L;
+                     long durMilli = (duration-durSec*1000000000L)/1000000;
+                     System.out.println("This comparison took "+duration+" nanoseconds. ("+durSec+"."+durMilli+" seconds)");
+                     sumOfDurations += duration;
+                 }
+
+                 System.out.println("All comparisons took "+sumOfDurations+" nanoseconds. ("+sumOfDurations/1000000000L+" seconds)");
+//                MeshView  leftMesh = view.loadMeshView(); // Load up LemurHandLeft.stl        
+//                MeshView rightMesh = view.loadMeshView(); // Load up LemurHandRight.stl
+//                rightMesh.getTransforms().add( new Translate(0,-15,0));
+//                rightMesh.getTransforms().add( new Translate(-43,0,0));
+//                rightMesh.getTransforms().add( new Rotate(10,Rotate.X_AXIS) );
+//
+//                // Start the timing
+//                long startTime = System.nanoTime();
+//                view.isCollision(false);
+//                // Finish the timing
+//                long endTime  = System.nanoTime();
+//                long duration = (endTime - startTime);  //divide by 1000000 to get milliseconds.
+//                long durSec   =  duration/1000000000L;
+//                long durMilli = (duration-durSec*1000000000L)/1000000;
+//                System.out.println("This comparison took "+duration+" nanoseconds. ("+durSec+"."+durMilli+" seconds)");
             }
         }       
     }

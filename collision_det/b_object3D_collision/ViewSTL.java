@@ -361,17 +361,28 @@ public class ViewSTL {
 //		  boolean is_inside_box = object.isCollisionBoundingBoxExhaustive(new float[]{minX,minY,minZ}, new float[]{maxX,maxY,maxZ});
 		  float ax = object.a[0];float ay = object.a[1];float az = object.a[2];float bx = object.b[0];float by = object.b[1];
 		  float bz = object.b[2];float cx = object.c[0];float cy = object.c[1];float cz = object.c[2];
-          boolean not_inside_box = 
-                  !((ax >= minX && ax <= maxX && ay >= minY && ay <= maxY && az >= minZ && az <= maxZ) ||
-                   (bx >= minX && bx <= maxX && by >= minY && by <= maxY && bz >= minZ && bz <= maxZ) ||
-                   (cx >= minX && cx <= maxX && cy >= minY && cy <= maxY && cz >= minZ && cz <= maxZ)); //first see if all points are in the box
           boolean clearly_outside_box = 
                   (ax <= minX && bx <= minX && cx <= minX) || (ax >= maxX && bx >= maxX && cx >= maxX) ||
                   (ay <= minY && by <= minY && cy <= minY) || (ay >= maxY && by >= maxY && cy >= maxY) ||
                   (az <= minZ && bz <= minZ && cz <= minZ) || (az >= maxZ && bz >= maxZ && cz >= maxZ)   ; //first see if all points are in the box
+          boolean not_inside_box = true; //assume it's outside until proven otherwise
+          
+          //much faster if we are dumb! Kind of shocking.
+//          if(!clearly_outside_box){
+              not_inside_box = 
+                      !((ax >= minX && ax <= maxX && ay >= minY && ay <= maxY && az >= minZ && az <= maxZ) ||
+                       (bx >= minX && bx <= maxX && by >= minY && by <= maxY && bz >= minZ && bz <= maxZ) ||
+                       (cx >= minX && cx <= maxX && cy >= minY && cy <= maxY && cz >= minZ && cz <= maxZ)); //first see if all points are in the box
+//          }
+          boolean exhaustive_check = true;
+//          if(!not_inside_box){ //if it is in the box, then do one last check
+//        	  exhaustive_check = object.isCollisionBoundingBoxExhaustive(new float[]{minX,minY,minZ}, new float[]{maxX,maxY,maxZ});
+//          }
+
+
 		  //make a separate if since we need to do the above check before we move on
           //if((!(not_inside_box) || edge_through_box) && !(clearly_outside_box)){ //if it's not outside the box, then it must be in the box, so add it.
-          if(!(not_inside_box && clearly_outside_box)){ //if it's not outside the box, then it must be in the box, so add it.
+          if(!(not_inside_box && clearly_outside_box && exhaustive_check)){ //if it's not outside the box, then it must be in the box, so add it.
           //if(!(not_inside_box) || edge_through_box){ //if it's not outside the box, then it must be in the box, so add it.
 			  output_objects.add(object);
 		  }
@@ -521,7 +532,7 @@ public class ViewSTL {
     	  Triangle3D a = objectA.get(iFaceA);
           for ( int iFaceB = 0; iFaceB < objectB.size(); iFaceB++ ) {
               Triangle3D b = objectB.get(iFaceB);
-              if ( a.isCollisionLP(b,baos) ) {
+              if ( a.isCollision(b) ) {
                   System.out.println("COLLISION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                   PhongMaterial sample = new PhongMaterial(collsnColor);
                   sample.setSpecularColor(lightColor);

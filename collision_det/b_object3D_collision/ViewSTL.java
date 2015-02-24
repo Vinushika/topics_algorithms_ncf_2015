@@ -22,6 +22,7 @@ import javafx.stage.Stage;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -396,7 +397,6 @@ public class ViewSTL {
       //that way we can at the end of everything just call Triangle3D's isCollision method
       //between triangle pairs until we're done, skipping over the old method entirely.
       System.out.println("Checking collision...");
-//		PrintStream originalSerr = System.err;
 //		System.setErr(new PrintStream(new OutputStream(){
 //			@Override
 //			public void write(int b) {} //empty prints so we save on writing to console
@@ -425,7 +425,7 @@ public class ViewSTL {
         	  }
           }
       }
-//      System.setErr(originalSerr);
+
       return returnValue;
   }
   
@@ -482,7 +482,7 @@ public class ViewSTL {
                   if (a0.getZ()>a1.getZ()) { minAz = (float) a1.getZ(); maxAz = (float) a0.getZ(); } else { minAz = (float) a0.getZ(); maxAz = (float) a1.getZ(); } if (a2.getZ()<minAz) { minAz = (float) a2.getZ(); } if (a2.getZ()>maxAz) { maxAz = (float) a2.getZ(); } 
                   if (b0.getZ()>b1.getZ()) { minBz = (float) b1.getZ(); maxBz = (float) b0.getZ(); } else { minBz = (float) b0.getZ(); maxBz = (float) b1.getZ(); } if (b2.getZ()<minBz) { minBz = (float) b2.getZ(); } if (b2.getZ()>maxBz) { maxBz = (float) b2.getZ(); } if (minAz>maxBz || maxAz<minBz) continue; 
               }
-
+              
               if ( a.isCollision(b) ) {
                   System.out.println("COLLISION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                   System.out.println("Triangles are at: [" + a.a[0] + "," + a.a[1] + "," + a.a[2] + "]" +
@@ -511,6 +511,9 @@ public class ViewSTL {
   
   boolean isCollision(ArrayList<Triangle3D> objectA, ArrayList<Triangle3D> objectB, int iA, int iB) {
 	  //we need iA and iB purely to make the objects red
+		PrintStream originalSerr = System.err;
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		System.setErr(new PrintStream(baos)); //I don't want to reset baos over and over so I'm passing it as a param...
 	  MeshView shapeA = (MeshView)rootMeshRotates.getChildren().get(iA);
 	  MeshView shapeB = (MeshView)rootMeshRotates.getChildren().get(iB);
 	  //after this we don't need it
@@ -518,18 +521,19 @@ public class ViewSTL {
     	  Triangle3D a = objectA.get(iFaceA);
           for ( int iFaceB = 0; iFaceB < objectB.size(); iFaceB++ ) {
               Triangle3D b = objectB.get(iFaceB);
-              if ( a.isCollision(b) ) {
+              if ( a.isCollisionLP(b,baos) ) {
                   System.out.println("COLLISION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                   PhongMaterial sample = new PhongMaterial(collsnColor);
                   sample.setSpecularColor(lightColor);
                   sample.setSpecularPower(16);
                   shapeA.setMaterial(sample);
                   shapeB.setMaterial(sample);
+                  System.setErr(originalSerr);
                   return true;
               }
           }
       }
-
+      System.setErr(originalSerr);
       return false;
   }
 

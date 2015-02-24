@@ -1,5 +1,7 @@
 package b_object3D_collision;
 
+import java.io.ByteArrayOutputStream;
+
 import javafx.geometry.Point3D;
 
 
@@ -135,7 +137,7 @@ public class Triangle3D {
         }
     }
 
-    boolean isCollisionLP(Triangle3D t1){
+    boolean isCollisionLP(Triangle3D t1, ByteArrayOutputStream baos){
     	//This uses LPSOLVE to hopefully do things faster than regular isCollision
     	//for triangles with vertices ABC DEF, we only need points a, d, and the segments AB, AC, DE, DF.
     	//so first let's set up all our variables
@@ -149,6 +151,8 @@ public class Triangle3D {
     	//in fact, it is exactly = 0, so we can do >= and <=. This means we can rearrange:
     	//-(A-D) == B_0 V(AB) + B_1 V(AC) - B_2 V(DE) - B_3 V(DF)
     	//cast to doubles because LPSolver likes doubles
+    	//we pass baos as an agrument purely so we can check whether the soln is unbounded or not
+    	//and so we don't open a ton of outputstreams, slowing down our algorithm
     	double[] dummy = new double[]{-1.0*(a[0] - t1.a[0]), -1.0*(a[1] - t1.a[1]), -1.0*(a[2] - t1.a[2])}; //-1 so we can use it in the constraints
     	double[] Vab = new double[]{b[0]-a[0],b[1]-a[1],b[2]-a[2]};
     	double[] Vac = new double[]{c[0]-a[0],c[1]-a[1],c[2]-a[2]};
@@ -164,9 +168,10 @@ public class Triangle3D {
 		lp.setMinProblem(true); 
 		LinearProgramSolver solver  = SolverFactory.newDefault(); 
 		double[] sol = solver.solve(lp);
+		String soln_issue = baos.toString();
 		//if any of the solutions are 0, we quit
-		for(double x : sol)
-			if(x == 0.0) return false;
+		if(soln_issue.length() > 0) System.out.println(soln_issue);
+		if(soln_issue.indexOf("infeasible") > -1) return false;
     	return true;
     }
     

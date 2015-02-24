@@ -1,5 +1,7 @@
 package b_object3D_collision;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 import javafx.geometry.Point3D;
 import javafx.scene.*;
 import javafx.scene.control.Button;
@@ -300,6 +302,29 @@ public class ViewSTL {
 	  return object;
   }
   
+  float[] getBoundingBoxOverlap(float[] box1, float[] box2) {
+	  //algorithm written by Thomas Haugh
+	  //adapted to float[] notation for use here
+	  float aminX = box1[0]; float amaxX = box1[1]; 
+	  float aminY = box1[2]; float amaxY = box1[3];
+	  float aminZ = box1[4]; float amaxZ = box1[5];
+	  float bminX = box1[0]; float bmaxX = box1[1]; 
+	  float bminY = box1[2]; float bmaxY = box1[3];
+	  float bminZ = box1[4]; float bmaxZ = box1[5];  
+	if (aminX> bmaxX || amaxX< bminX || aminY> bmaxY || amaxY< bminY || aminZ> bmaxZ || amaxZ< bminZ || amaxX> bminX) {
+	    return null;
+	} else {
+	    float myMinX = max(aminX,bminX);
+	    float myMinY = max(aminY,bminY);
+	    float myMinZ = max(aminZ,bminZ);
+	    float myMaxX = min(amaxX,bmaxX);
+	    float myMaxY = min(amaxY,bmaxY);
+	    float myMaxZ = min(amaxZ,bmaxZ);
+	    float[] overlap =  new float[]{myMinX, myMinY, myMinZ, myMaxX, myMaxY, myMaxZ};
+	    return overlap;
+	}
+  }
+  
   float[] getBoundingBox(ArrayList<Triangle3D> object, float[] oldBox){
 	  //returns an array with the bounding box defined by the min and max of the arraylist of triangles
 	  //this fails if our coordinates are weirdly rotated, but I think this should be fine overall
@@ -317,9 +342,12 @@ public class ViewSTL {
 		  //we just hardcode those in here so we don't have to change the code over there
 		  if(minX == 0){
 			  //nothing is 0 in an STL file as far as I know so we can just take the point in
-			  minX = maxX = t.a[0];
-			  minY = maxY = t.a[1];
-			  minZ = maxZ = t.a[2];
+			  minX = min(min(t.a[0],t.b[0]),t.c[0]);
+			  maxX = max(max(t.a[0],t.b[0]),t.c[0]);
+			  minY = min(min(t.a[1],t.b[1]),t.b[1]); 
+			  maxY = max(max(t.a[1],t.b[1]),t.b[1]);
+			  minZ = min(min(t.a[2],t.b[2]),t.b[2]); 
+			  maxZ = max(max(t.a[2],t.b[2]),t.b[2]);
 		  }else{
 			  //I can't think of a shorter way to write this other than to offload the functionality
 			  //to the Triangle3D class, but then I'd just be calling getMinPoints() or something similar
@@ -417,22 +445,30 @@ public class ViewSTL {
     	  //loop over (n-1) objects so that you don't do an array-fill loop when you don't need to
     	  //now get all the triangles from object A
     	  ArrayList<Triangle3D> objectA = getAllTrianglesFromObject(iA);
-    	  float[] box = getBoundingBox(objectA,null); //since we want to get a new box at this point
+    	  float[] boxA = getBoundingBox(objectA,null); //since we want to get a new box at this point
           for (int iB = iA+1; iB < rootMeshRotates.getChildren().size(); iB++) {
         	  if(slow){
         		  System.out.println("Slow collision...");
         		  returnValue = isCollisionOld(iA,iB);
         	  }else{
+        		  //first do overlap check with bounding boxen
 
         		  ArrayList<Triangle3D> objectB = getAllTrianglesFromObject(iB);
-        		  //now define the bounding box
-        		  box = getBoundingBox(objectB,box); //make sure we take in the old box to get a proper bounding box that bounds both of them
-        		  //now call isCollisionRecursive
-        		  //        	  System.out.println("In isCollision()");
-        		  returnValue = isCollisionRecursive(objectA,objectB,box[0],box[1],box[2],box[3],box[4],box[5], iA, iB, 0);
-        		  //        	  System.out.println("Collision is: " + returnValue);
+        		  float[] boxB = getBoundingBox(objectB,null);
+        		  float[] overlap = getBoundingBoxOverlap(boxA,boxB);
+        		  if(overlap == null){
+        			  returnValue = false;
+        		  }else{
+            		  //check overlap first then define new box if overlap
+            		  //now define the bounding box
+            		  float[] box = overlap; //make sure we take in the old box to get a proper bounding box that bounds both of them
+            		  //now call isCollisionRecursive
+            		  //        	  System.out.println("In isCollision()");
+            		  returnValue = isCollisionRecursive(objectA,objectB,box[0],box[1],box[2],box[3],box[4],box[5], iA, iB, 0);
+            		  //        	  System.out.println("Collision is: " + returnValue);
 
-        		  //if ( isCollision(iA,iB) ) returnValue = true;
+            		  //if ( isCollision(iA,iB) ) returnValue = true;
+        		  }
         	  }
           }
       }

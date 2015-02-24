@@ -9,6 +9,7 @@ import javafx.geometry.Point3D;
 import scpsolver.problems.LinearProgram;
 import scpsolver.constraints.LinearEqualsConstraint;
 import scpsolver.constraints.LinearSmallerThanEqualsConstraint;
+import scpsolver.constraints.LinearBiggerThanEqualsConstraint;
 import scpsolver.lpsolver.*; //there's only two classes in here anyway
 
 // This triangle/matrix manipulation package is incomplete 
@@ -165,17 +166,19 @@ public class Triangle3D {
 		lp.addConstraint(new LinearEqualsConstraint(new double[]{Vab[2],Vac[2],Vde[2],Vdf[2]}, dummy[2], "c3")); 
 		lp.addConstraint(new LinearSmallerThanEqualsConstraint(new double[]{1.0,1.0,0.0,0.0}, 1.0, "c4")); 
 		lp.addConstraint(new LinearSmallerThanEqualsConstraint(new double[]{0.0,0.0,1.0,1.0}, 1.0, "c5")); 
-		lp.addConstraint(new LinearSmallerThanEqualsConstraint(new double[]{1.0,0.0,0.0,0.0}, 0.0, "c6")); 
-		lp.addConstraint(new LinearSmallerThanEqualsConstraint(new double[]{0.0,1.0,0.0,0.0}, 0.0, "c7")); 
-		lp.addConstraint(new LinearSmallerThanEqualsConstraint(new double[]{0.0,0.0,1.0,0.0}, 0.0, "c8")); 
-		lp.addConstraint(new LinearSmallerThanEqualsConstraint(new double[]{0.0,0.0,0.0,1.0}, 0.0, "c9")); 
+		lp.addConstraint(new LinearBiggerThanEqualsConstraint(new double[]{1.0,0.0,0.0,0.0}, 0.0, "c6")); 
+		lp.addConstraint(new LinearBiggerThanEqualsConstraint(new double[]{0.0,1.0,0.0,0.0}, 0.0, "c7")); 
+		lp.addConstraint(new LinearBiggerThanEqualsConstraint(new double[]{0.0,0.0,1.0,0.0}, 0.0, "c8")); 
+		lp.addConstraint(new LinearBiggerThanEqualsConstraint(new double[]{0.0,0.0,0.0,1.0}, 0.0, "c9")); 
 		lp.setMinProblem(true); 
 		LinearProgramSolver solver  = SolverFactory.newDefault(); 
 		double[] sol = solver.solve(lp);
-		String soln_issue = baos.toString();
+		for(double x : sol){
+			if (x == 0.0) return false;
+		}
+		//String soln_issue = baos.toString();
 		//if any of the solutions are 0, we quit
-		//if(soln_issue.length() > 0) System.out.println(soln_issue);
-		if(soln_issue.indexOf("infeasible") > -1) return false;
+		//if(soln_issue.indexOf("infeasible") > -1) return false;
     	return true;
     }
     

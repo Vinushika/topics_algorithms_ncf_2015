@@ -344,10 +344,10 @@ public class ViewSTL {
 			  //nothing is 0 in an STL file as far as I know so we can just take the point in
 			  minX = min(min(t.a[0],t.b[0]),t.c[0]);
 			  maxX = max(max(t.a[0],t.b[0]),t.c[0]);
-			  minY = min(min(t.a[1],t.b[1]),t.b[1]); 
-			  maxY = max(max(t.a[1],t.b[1]),t.b[1]);
-			  minZ = min(min(t.a[2],t.b[2]),t.b[2]); 
-			  maxZ = max(max(t.a[2],t.b[2]),t.b[2]);
+			  minY = min(min(t.a[1],t.b[1]),t.c[1]); 
+			  maxY = max(max(t.a[1],t.b[1]),t.c[1]);
+			  minZ = min(min(t.a[2],t.b[2]),t.c[2]); 
+			  maxZ = max(max(t.a[2],t.b[2]),t.c[2]);
 		  }else{
 			  //I can't think of a shorter way to write this other than to offload the functionality
 			  //to the Triangle3D class, but then I'd just be calling getMinPoints() or something similar
@@ -454,21 +454,21 @@ public class ViewSTL {
         		  //first do overlap check with bounding boxen
 
         		  ArrayList<Triangle3D> objectB = getAllTrianglesFromObject(iB);
-        		  float[] boxB = getBoundingBox(objectB,null);
-        		  float[] overlap = getBoundingBoxOverlap(boxA,boxB);
-        		  if(overlap == null){
+        		  float[] boxB = getBoundingBox(objectB,boxA);
+        		  //float[] overlap = getBoundingBoxOverlap(boxA,boxB);
+        		  //if(overlap == null){
         			  returnValue = false;
-        		  }else{
+        		  //}else{
             		  //check overlap first then define new box if overlap
             		  //now define the bounding box
-            		  float[] box = overlap; //make sure we take in the old box to get a proper bounding box that bounds both of them
+            		  float[] box = boxB; //make sure we take in the old box to get a proper bounding box that bounds both of them
             		  //now call isCollisionRecursive
             		  //        	  System.out.println("In isCollision()");
             		  returnValue = isCollisionRecursive(objectA,objectB,box[0],box[1],box[2],box[3],box[4],box[5], iA, iB, 0);
             		  //        	  System.out.println("Collision is: " + returnValue);
 
             		  //if ( isCollision(iA,iB) ) returnValue = true;
-        		  }
+        		  //}
         	  }
           }
       }

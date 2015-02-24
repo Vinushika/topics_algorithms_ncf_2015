@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jre1.8.0_31_32bit"/>
+	<classpathentry kind="lib" path="C:/Users/Vinushka/Documents/school/top_algorithms/topics_algorithms_ncf_2015/compression/src/b_object3D_collision/FXyzLib.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Vinushka/Documents/school/top_algorithms/topics_algorithms_ncf_2015/compression/src/b_object3D_collision/jimStlMeshImporterJFX.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Vinushka/Documents/school/top_algorithms/topics_algorithms_ncf_2015/compression/src/b_object3D_collision/SCPSolver.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Vinushka/Documents/school/top_algorithms/topics_algorithms_ncf_2015/compression/src/b_object3D_collision/LPSOLVESolverPack.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

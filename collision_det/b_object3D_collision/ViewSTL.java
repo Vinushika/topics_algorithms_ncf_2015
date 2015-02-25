@@ -309,9 +309,9 @@ public class ViewSTL {
 	  float aminX = box1[0]; float amaxX = box1[1]; 
 	  float aminY = box1[2]; float amaxY = box1[3];
 	  float aminZ = box1[4]; float amaxZ = box1[5];
-	  float bminX = box1[0]; float bmaxX = box1[1]; 
-	  float bminY = box1[2]; float bmaxY = box1[3];
-	  float bminZ = box1[4]; float bmaxZ = box1[5];  
+	  float bminX = box2[0]; float bmaxX = box2[1]; 
+	  float bminY = box2[2]; float bmaxY = box2[3];
+	  float bminZ = box2[4]; float bmaxZ = box2[5];  
 	if (aminX> bmaxX || amaxX< bminX || aminY> bmaxY || amaxY< bminY || aminZ> bmaxZ || amaxZ< bminZ) {
 	    return null;
 	} else {

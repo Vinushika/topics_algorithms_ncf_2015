@@ -56,7 +56,7 @@ public class ViewSTL {
   private Controller controller;
 
   private static final String MESH_DIRECTORY =
-    "/home/kgnotte/Documents/School/NCF/TopicsInAlgorithms";
+    "C:/Users/Vinushka/Documents/school/top_algorithms/topics_algorithms_ncf_2015/compression/stlFiles";
 
   private static final double MODEL_SCALE_FACTOR = 4;
   private static final double MODEL_X_OFFSET = 0; // standard

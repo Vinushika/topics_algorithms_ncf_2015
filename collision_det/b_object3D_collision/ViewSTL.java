@@ -22,6 +22,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
 
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.io.ByteArrayOutputStream;
@@ -55,7 +56,7 @@ public class ViewSTL {
   private Controller controller;
 
   private static final String MESH_DIRECTORY =
-    "C:/Users/Vinushka/Documents/school/top_algorithms/topics_algorithms_ncf_2015/compression/stlFiles";
+    "/home/kgnotte/Documents/School/NCF/TopicsInAlgorithms";
 
   private static final double MODEL_SCALE_FACTOR = 4;
   private static final double MODEL_X_OFFSET = 0; // standard
@@ -311,7 +312,7 @@ public class ViewSTL {
 	  float bminX = box1[0]; float bmaxX = box1[1]; 
 	  float bminY = box1[2]; float bmaxY = box1[3];
 	  float bminZ = box1[4]; float bmaxZ = box1[5];  
-	if (aminX> bmaxX || amaxX< bminX || aminY> bmaxY || amaxY< bminY || aminZ> bmaxZ || amaxZ< bminZ || amaxX> bminX) {
+	if (aminX> bmaxX || amaxX< bminX || aminY> bmaxY || amaxY< bminY || aminZ> bmaxZ || amaxZ< bminZ) {
 	    return null;
 	} else {
 	    float myMinX = max(aminX,bminX);
@@ -320,7 +321,7 @@ public class ViewSTL {
 	    float myMaxX = min(amaxX,bmaxX);
 	    float myMaxY = min(amaxY,bmaxY);
 	    float myMaxZ = min(amaxZ,bmaxZ);
-	    float[] overlap =  new float[]{myMinX, myMinY, myMinZ, myMaxX, myMaxY, myMaxZ};
+	    float[] overlap =  new float[]{myMinX, myMaxX, myMinY, myMaxY, myMinZ, myMaxZ};
 	    return overlap;
 	}
   }
@@ -329,50 +330,51 @@ public class ViewSTL {
 	  //returns an array with the bounding box defined by the min and max of the arraylist of triangles
 	  //this fails if our coordinates are weirdly rotated, but I think this should be fine overall
 	  //oldBox is an optional argument, we use it if we have to define a different box.
-	  float minX, maxX, minY, maxY, minZ, maxZ; //declare all 6 vars at the top
-	  if(oldBox != null){
-		  minX = oldBox[0];maxX=oldBox[1];minY=oldBox[2];maxY=oldBox[3];minZ=oldBox[4];maxZ=oldBox[5];
-	  }else{
-		  //	declare all 6 to be 0 for now
-		  minX = maxX = minY = maxY = minZ = maxZ = 0;
-	  }
-	  for(Triangle3D t : object){
+      float minX, maxX, minY, maxY, minZ, maxZ; //declare all 6 vars at the top
+	  //if(oldBox != null){
+	  //minX = oldBox[0];maxX=oldBox[1];minY=oldBox[2];maxY=oldBox[3];minZ=oldBox[4];maxZ=oldBox[5];
+	  //The line above seems pointless to me
+	  //}else{
+	  //	declare all 6 to be 0 for now
+      minX = minY = minZ = Float.POSITIVE_INFINITY;
+      maxX = maxY = maxZ = Float.NEGATIVE_INFINITY;
+	  // }
+      for(Triangle3D t : object){
 		  //loop through, get min and max
 		  //each triangle3d object has 3 float arrays with the points...
 		  //we just hardcode those in here so we don't have to change the code over there
-		  if(minX == 0){
+		  //if(minX == 0){
 			  //nothing is 0 in an STL file as far as I know so we can just take the point in
-			  minX = min(min(t.a[0],t.b[0]),t.c[0]);
-			  maxX = max(max(t.a[0],t.b[0]),t.c[0]);
-			  minY = min(min(t.a[1],t.b[1]),t.c[1]); 
-			  maxY = max(max(t.a[1],t.b[1]),t.c[1]);
-			  minZ = min(min(t.a[2],t.b[2]),t.c[2]); 
-			  maxZ = max(max(t.a[2],t.b[2]),t.c[2]);
-		  }else{
+	      //	  minX = min(min(t.a[0],t.b[0]),t.c[0]);
+	      //	  maxX = max(max(t.a[0],t.b[0]),t.c[0]);
+	      //	  minY = min(min(t.a[1],t.b[1]),t.c[1]); 
+	      //	  maxY = max(max(t.a[1],t.b[1]),t.c[1]);
+	      //	  minZ = min(min(t.a[2],t.b[2]),t.c[2]); 
+	      //	  maxZ = max(max(t.a[2],t.b[2]),t.c[2]);
+	      //  }else{
 			  //I can't think of a shorter way to write this other than to offload the functionality
 			  //to the Triangle3D class, but then I'd just be calling getMinPoints() or something similar
 			  //which would execute this very same block, but in Triangle3D instead of here
 			  //I don't think the object orientation is worthwhile in algorithmic terms here
-			  if(t.a[0] < minX) minX = t.a[0];
-			  if(t.a[0] > maxX) maxX = t.a[0];
-			  if(t.a[1] < minY) minY = t.a[1];
-			  if(t.a[1] > maxY) maxY = t.a[1];
-			  if(t.a[2] < minZ) minZ = t.a[2];
-			  if(t.a[2] > maxZ) maxZ = t.a[2];
-			  if(t.b[0] < minX) minX = t.b[0];
-			  if(t.b[0] > maxX) maxX = t.b[0];
-			  if(t.b[1] < minY) minY = t.b[1];
-			  if(t.b[1] > maxY) maxY = t.b[1];
-			  if(t.b[2] < minZ) minZ = t.b[2];
-			  if(t.b[2] > maxZ) maxZ = t.b[2];
-			  if(t.c[0] < minX) minX = t.c[0];
-			  if(t.c[0] > maxX) maxX = t.c[0];
-			  if(t.c[1] < minY) minY = t.c[1];
-			  if(t.c[1] > maxY) maxY = t.c[1];
-			  if(t.c[2] < minZ) minZ = t.c[2];
-			  if(t.c[2] > maxZ) maxZ = t.c[2];
-		  } 
-	  }
+	  if(t.a[0] < minX) minX = t.a[0];
+	  if(t.a[0] > maxX) maxX = t.a[0];
+	  if(t.a[1] < minY) minY = t.a[1];
+	  if(t.a[1] > maxY) maxY = t.a[1];
+	  if(t.a[2] < minZ) minZ = t.a[2];
+	  if(t.a[2] > maxZ) maxZ = t.a[2];
+	  if(t.b[0] < minX) minX = t.b[0];
+	  if(t.b[0] > maxX) maxX = t.b[0];
+	  if(t.b[1] < minY) minY = t.b[1];
+	  if(t.b[1] > maxY) maxY = t.b[1];
+	  if(t.b[2] < minZ) minZ = t.b[2];
+	  if(t.b[2] > maxZ) maxZ = t.b[2];
+	  if(t.c[0] < minX) minX = t.c[0];
+	  if(t.c[0] > maxX) maxX = t.c[0];
+	  if(t.c[1] < minY) minY = t.c[1];
+	  if(t.c[1] > maxY) maxY = t.c[1];
+	  if(t.c[2] < minZ) minZ = t.c[2];
+	  if(t.c[2] > maxZ) maxZ = t.c[2];
+      } 
 	  return new float[]{minX,maxX,minY,maxY,minZ,maxZ};
   }
   
@@ -441,38 +443,42 @@ public class ViewSTL {
 //			public void write(int b) {} //empty prints so we save on writing to console
 //		}));
 		//kill stderr for a while so the collision checker doesn't go nuts
-      for     (int iA =    0; iA < rootMeshRotates.getChildren().size() - 1; iA++) { 
+      for (int iA =    0; iA < rootMeshRotates.getChildren().size() - 1; iA++) { 
     	  //loop over (n-1) objects so that you don't do an array-fill loop when you don't need to
     	  //now get all the triangles from object A
     	  ArrayList<Triangle3D> objectA = getAllTrianglesFromObject(iA);
     	  float[] boxA = getBoundingBox(objectA,null); //since we want to get a new box at this point
           for (int iB = iA+1; iB < rootMeshRotates.getChildren().size(); iB++) {
-        	  if(slow){
-        		  System.out.println("Slow collision...");
-        		  returnValue = isCollisionOld(iA,iB);
-        	  }else{
-        		  //first do overlap check with bounding boxen
+	      if(slow){
+		  System.out.println("Slow collision...");
+		  returnValue = isCollisionOld(iA,iB);
+	      }else{
+		  //first do overlap check with bounding boxen
 
-        		  ArrayList<Triangle3D> objectB = getAllTrianglesFromObject(iB);
-        		  float[] boxB = getBoundingBox(objectB,boxA);
-        		  //float[] overlap = getBoundingBoxOverlap(boxA,boxB);
-        		  //if(overlap == null){
-        			  returnValue = false;
-        		  //}else{
-            		  //check overlap first then define new box if overlap
-            		  //now define the bounding box
-            		  float[] box = boxB; //make sure we take in the old box to get a proper bounding box that bounds both of them
-            		  //now call isCollisionRecursive
-            		  //        	  System.out.println("In isCollision()");
-            		  returnValue = isCollisionRecursive(objectA,objectB,box[0],box[1],box[2],box[3],box[4],box[5], iA, iB, 0);
+		  ArrayList<Triangle3D> objectB = getAllTrianglesFromObject(iB);
+		  float[] boxB = getBoundingBox(objectB,null);
+		  float[] overlap = getBoundingBoxOverlap(boxA,boxB);
+		  System.out.println(Arrays.toString(boxA));
+		  System.out.println(Arrays.toString(boxB));
+		  if(overlap == null){
+		      System.out.println("No Overlap!!!!");
+		      returnValue = false;
+		  } else{
+		      //check overlap first then define new box if overlap
+		      //now define the bounding box
+		      //float[] box = boxB; //make sure we take in the old box to get a proper bounding box that bounds both of them
+		      //now call isCollisionRecursive
+		      //        	  System.out.println("In isCollision()")
+		      System.out.println(Arrays.toString(overlap));
+		      float[] box = overlap;
+		      returnValue = isCollisionRecursive(objectA,objectB,box[0],box[1],box[2],box[3],box[4],box[5], iA, iB, 0);
             		  //        	  System.out.println("Collision is: " + returnValue);
 
             		  //if ( isCollision(iA,iB) ) returnValue = true;
-        		  //}
-        	  }
-          }
-      }
-
+		  }
+	      }
+	  }
+      }	  
       return returnValue;
   }
   

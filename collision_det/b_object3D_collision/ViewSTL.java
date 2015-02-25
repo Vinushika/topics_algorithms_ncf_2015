@@ -326,36 +326,19 @@ public class ViewSTL {
 	}
   }
   
-  float[] getBoundingBox(ArrayList<Triangle3D> object, float[] oldBox){
-	  //returns an array with the bounding box defined by the min and max of the arraylist of triangles
-	  //this fails if our coordinates are weirdly rotated, but I think this should be fine overall
-	  //oldBox is an optional argument, we use it if we have to define a different box.
+  float[] getBoundingBox(ArrayList<Triangle3D> object){
+      //returns an array with the bounding box defined by the min and max of the arraylist of triangles
+      //this fails if our coordinates are weirdly rotated, but I think this should be fine overall
+      //oldBox is an optional argument, we use it if we have to define a different box.
       float minX, maxX, minY, maxY, minZ, maxZ; //declare all 6 vars at the top
-	  //if(oldBox != null){
-	  //minX = oldBox[0];maxX=oldBox[1];minY=oldBox[2];maxY=oldBox[3];minZ=oldBox[4];maxZ=oldBox[5];
-	  //The line above seems pointless to me
-	  //}else{
-	  //	declare all 6 to be 0 for now
       minX = minY = minZ = Float.POSITIVE_INFINITY;
       maxX = maxY = maxZ = Float.NEGATIVE_INFINITY;
-	  // }
+      //loop through, get min and max
+      //I can't think of a shorter way to write this other than to offload the functionality
+      //to the Triangle3D class, but then I'd just be calling getMinPoints() or something similar
+      //which would execute this very same block, but in Triangle3D instead of here
+      //I don't think the object orientation is worthwhile in algorithmic terms here
       for(Triangle3D t : object){
-		  //loop through, get min and max
-		  //each triangle3d object has 3 float arrays with the points...
-		  //we just hardcode those in here so we don't have to change the code over there
-		  //if(minX == 0){
-			  //nothing is 0 in an STL file as far as I know so we can just take the point in
-	      //	  minX = min(min(t.a[0],t.b[0]),t.c[0]);
-	      //	  maxX = max(max(t.a[0],t.b[0]),t.c[0]);
-	      //	  minY = min(min(t.a[1],t.b[1]),t.c[1]); 
-	      //	  maxY = max(max(t.a[1],t.b[1]),t.c[1]);
-	      //	  minZ = min(min(t.a[2],t.b[2]),t.c[2]); 
-	      //	  maxZ = max(max(t.a[2],t.b[2]),t.c[2]);
-	      //  }else{
-			  //I can't think of a shorter way to write this other than to offload the functionality
-			  //to the Triangle3D class, but then I'd just be calling getMinPoints() or something similar
-			  //which would execute this very same block, but in Triangle3D instead of here
-			  //I don't think the object orientation is worthwhile in algorithmic terms here
 	  if(t.a[0] < minX) minX = t.a[0];
 	  if(t.a[0] > maxX) maxX = t.a[0];
 	  if(t.a[1] < minY) minY = t.a[1];
@@ -377,49 +360,124 @@ public class ViewSTL {
       } 
 	  return new float[]{minX,maxX,minY,maxY,minZ,maxZ};
   }
-  
-  
-  private ArrayList<Triangle3D> getTrianglesInBox(
-		ArrayList<Triangle3D> triangles, float minX, float maxX, float minY,
-		float maxY, float minZ, float maxZ) {
+
+    float getMinBoxDim(float[] box) {
+	return min(min(box[1]-box[0],box[3]-box[2]),box[5]-box[4]);
+    }
+
+    //This will make are search space much smaller by refining the hitboxes
+    ArrayList<float[]> getEpsilonBox(ArrayList<Triangle3D> object,float epsilon) {
+	ArrayList<float[]> boundingBoxes = new ArrayList<float[]>();
+	float[] initialBox = getBoundingBox( object);
+	float   minBoxDim  = getMinBoxDim(initalBox);
+
+	private void getEpsilonBoxRecursive(ArrayList<Triangle3D> object,float[] box,float minBoxDim) {
+	    if(minBoxDim > epsilon) {
+		if(anyTriangleInBox(object,box)) {
+			ArrayList<float[]> boxtants = getBoxtants(box);
+			for(float[] subBox : boxtants) {
+			    getEpsilonBoxRecursive(object,subBox,minBoxDim/2);
+			}
+		}
+	    } else {
+		if(anyTriangleInBox(object,box)) {boundingBoxes.add(box);}
+	    }
+	}
+
+	getEpsilonBoxRecursive(object,box,minBoxDim);
+	return boundingBoxes;
+    }
+
+    ArrayList<float[]> getOverlaps (ArrayList<float> boxesA,ArrayList<float[]> boxesB) {
+	ArrayList<float[]> overlapS = new ArrayList<float>();
+	for(float[] boxA : boxesA) {
+	    for(float boxB : boxesB) {
+		overlap = getOverlap(boxA,boxB);
+		if(overlap != null) {overlapS.add(overlap);}
+	    }
+	}
+	return overlapS;
+    }
+
+    ArrayList<float[]> getBoxtants(float[] box) {
+	float minX = box[0]; float maxX = box[1];
+	float minY = box[2]; float maxY = box[3];
+	float minZ = box[4]; float maxZ = box[5];
+	float midX = (maxX + minX)/2;
+	float midY = (maxY + minY)/2;
+	float midZ = (maxZ + minZ)/2;
+	ArrayList<float[]> boxtants = new ArrayList<float>();
+	boxtants.add(new float[]{minX,midX,minY,midY,minZ,midZ});
+	boxtants.add(new float[]{midX,maxX,minY,midY,minZ,midZ});
+	boxtants.add(new float[]{minX,midX,midY,maxY,minZ,midZ});
+	boxtants.add(new float[]{minX,midX,minY,midY,midZ,maxZ});
+	boxtants.add(new float[]{midX,maxX,midY,maxY,minZ,midZ});
+	boxtants.add(new float[]{midX,maxX,minY,midY,midZ,maxZ});
+	boxtants.add(new float[]{minX,midX,midY,maxY,midZ,mazZ});
+	boxtants.add(new float[]{midX,maxX,midY,maxY,midZ,mazZ});
+    }
+
+    boolean anyTriangleInBox(ArrayList<Triangle3D> triangles,float[] box) {
+	//SetDefault to flase
+	boolean somethingInBox = false;
+	//We itterate  over triangles
+	for(Triangle3D object : triangles){
+	    float ax = object.a[0];float ay = object.a[1];float az = object.a[2];
+	    float bx = object.b[0];float by = object.b[1];float bz = object.b[2];
+	    float cx = object.c[0];float cy = object.c[1];float cz = object.c[2];    
+	    //We will assume that our desired resolution is not particularly
+	    //fine compared to triangle size, so we will only check that there
+	    //is the point of some triangle in a box
+	    somethingInBox = (
+			      (ax > box[0] && ax < box[1] && ay > box[2] && ay < box[3] && az > box[4] && az < box[5]) ||
+			      (bx > box[0] && bx < box[1] && by > box[2] && by < box[3] && bz > box[4] && bz < box[5]) ||
+			      (cx > box[0] && cx < box[1] && cy > box[2] && cy < box[3] && cz > box[4] && cz < box[5]) );
+	    if(somethingInBox){break;}
+	}
+	return somethingInBox;
+    }
+    
+    private ArrayList<Triangle3D> getTrianglesInBox(ArrayList<Triangle3D> triangles,float[] box) {
+	float minX = box[0]; float maxX = box[1];
+	float minY = box[2]; float maxY = box[3];
+	float minZ = box[4]; float maxZ = box[5];
 	//Once again we have the same problem as getBoundingBox
 	//so we just take the same approach here as we did there
-	  //From a design perspective, this method is really ugly
-	  //Howewver I can't come up with a way to do this without adding too much complexity
-	  ArrayList<Triangle3D> output_objects = new ArrayList<Triangle3D>();
-	  for(Triangle3D object : triangles){
-//		  boolean is_inside_box = object.isCollisionBoundingBoxExhaustive(new float[]{minX,minY,minZ}, new float[]{maxX,maxY,maxZ});
-		  float ax = object.a[0];float ay = object.a[1];float az = object.a[2];float bx = object.b[0];float by = object.b[1];
-		  float bz = object.b[2];float cx = object.c[0];float cy = object.c[1];float cz = object.c[2];
-          boolean clearly_outside_box = 
-                  (ax <= minX && bx <= minX && cx <= minX) || (ax >= maxX && bx >= maxX && cx >= maxX) ||
-                  (ay <= minY && by <= minY && cy <= minY) || (ay >= maxY && by >= maxY && cy >= maxY) ||
-                  (az <= minZ && bz <= minZ && cz <= minZ) || (az >= maxZ && bz >= maxZ && cz >= maxZ)   ; //first see if all points are in the box
-          boolean not_inside_box = true; //assume it's outside until proven otherwise
-          
-          //much faster if we are dumb! Kind of shocking.
-//          if(!clearly_outside_box){
-              not_inside_box = 
-                      !((ax >= minX && ax <= maxX && ay >= minY && ay <= maxY && az >= minZ && az <= maxZ) ||
-                       (bx >= minX && bx <= maxX && by >= minY && by <= maxY && bz >= minZ && bz <= maxZ) ||
-                       (cx >= minX && cx <= maxX && cy >= minY && cy <= maxY && cz >= minZ && cz <= maxZ)); //first see if all points are in the box
-//          }
-          boolean exhaustive_check = true;
-//          if(!not_inside_box){ //if it is in the box, then do one last check
-//        	  exhaustive_check = object.isCollisionBoundingBoxExhaustive(new float[]{minX,minY,minZ}, new float[]{maxX,maxY,maxZ});
-//          }
-
-
-		  //make a separate if since we need to do the above check before we move on
-          //if((!(not_inside_box) || edge_through_box) && !(clearly_outside_box)){ //if it's not outside the box, then it must be in the box, so add it.
-          if(!(not_inside_box && clearly_outside_box && exhaustive_check)){ //if it's not outside the box, then it must be in the box, so add it.
-          //if(!(not_inside_box) || edge_through_box){ //if it's not outside the box, then it must be in the box, so add it.
-			  output_objects.add(object);
-		  }
-	  }
+	//From a design perspective, this method is really ugly
+	//Howewver I can't come up with a way to do this without adding too much complexity
+	ArrayList<Triangle3D> output_objects = new ArrayList<Triangle3D>();
+	for(Triangle3D object : triangles){
+	    // boolean is_inside_box = object.isCollisionBoundingBoxExhaustive(new float[]{minX,minY,minZ}, new float[]{maxX,maxY,maxZ});
+	    float ax = object.a[0];float ay = object.a[1];float az = object.a[2];float bx = object.b[0];float by = object.b[1];
+	    float bz = object.b[2];float cx = object.c[0];float cy = object.c[1];float cz = object.c[2];
+	    boolean clearly_outside_box = 
+		(ax <= minX && bx <= minX && cx <= minX) || (ax >= maxX && bx >= maxX && cx >= maxX) ||
+		(ay <= minY && by <= minY && cy <= minY) || (ay >= maxY && by >= maxY && cy >= maxY) ||
+		(az <= minZ && bz <= minZ && cz <= minZ) || (az >= maxZ && bz >= maxZ && cz >= maxZ)   ; //first see if all points are in the box
+	    boolean not_inside_box = true; //assume it's outside until proven otherwise
+	    
+	    //much faster if we are dumb! Kind of shocking.
+	    //          if(!clearly_outside_box){
+	    not_inside_box = 
+		!((ax >= minX && ax <= maxX && ay >= minY && ay <= maxY && az >= minZ && az <= maxZ) ||
+		  (bx >= minX && bx <= maxX && by >= minY && by <= maxY && bz >= minZ && bz <= maxZ) ||
+		  (cx >= minX && cx <= maxX && cy >= minY && cy <= maxY && cz >= minZ && cz <= maxZ)); //first see if all points are in the box
+		//          }
+	    boolean exhaustive_check = true;
+	    //          if(!not_inside_box){ //if it is in the box, then do one last check
+	    //        	  exhaustive_check = object.isCollisionBoundingBoxExhaustive(new float[]{minX,minY,minZ}, new float[]{maxX,maxY,maxZ});
+	    //          }
+	    
+	    //make a separate if since we need to do the above check before we move on
+	    //if((!(not_inside_box) || edge_through_box) && !(clearly_outside_box)){ //if it's not outside the box, then it must be in the box, so add it.
+	    if(!(not_inside_box && clearly_outside_box && exhaustive_check)){ //if it's not outside the box, then it must be in the box, so add it.
+		//if(!(not_inside_box) || edge_through_box){ //if it's not outside the box, then it must be in the box, so add it.
+		output_objects.add(object);
+	    }
+	}
 	return output_objects;
-}
-  
+    }
+    
   boolean isCollision(boolean slow) {
       setColorsNormal();
       boolean returnValue = false;
@@ -447,7 +505,7 @@ public class ViewSTL {
     	  //loop over (n-1) objects so that you don't do an array-fill loop when you don't need to
     	  //now get all the triangles from object A
     	  ArrayList<Triangle3D> objectA = getAllTrianglesFromObject(iA);
-    	  float[] boxA = getBoundingBox(objectA,null); //since we want to get a new box at this point
+    	  float[] boxA = getBoundingBox(objectA); //since we want to get a new box at this point
           for (int iB = iA+1; iB < rootMeshRotates.getChildren().size(); iB++) {
 	      if(slow){
 		  System.out.println("Slow collision...");
@@ -456,7 +514,7 @@ public class ViewSTL {
 		  //first do overlap check with bounding boxen
 
 		  ArrayList<Triangle3D> objectB = getAllTrianglesFromObject(iB);
-		  float[] boxB = getBoundingBox(objectB,null);
+		  float[] boxB = getBoundingBox(objectB);
 		  float[] overlap = getBoundingBoxOverlap(boxA,boxB);
 		  System.out.println(Arrays.toString(boxA));
 		  System.out.println(Arrays.toString(boxB));
@@ -471,7 +529,7 @@ public class ViewSTL {
 		      //        	  System.out.println("In isCollision()")
 		      System.out.println(Arrays.toString(overlap));
 		      float[] box = overlap;
-		      returnValue = isCollisionRecursive(objectA,objectB,box[0],box[1],box[2],box[3],box[4],box[5], iA, iB, 0);
+		      returnValue = isCollisionRecursive(objectA,objectB,box, iA, iB, 0);
             		  //        	  System.out.println("Collision is: " + returnValue);
 
             		  //if ( isCollision(iA,iB) ) returnValue = true;
@@ -481,7 +539,27 @@ public class ViewSTL {
       }	  
       return returnValue;
   }
-  
+
+    boolean isCollisionNew() {
+	setColorsNormal();
+	boolean returnValue = false;
+	System.out.println("Checking collision...");
+	for (int iA = 0; iA < rootMeshRotates.getChildren().size() - 1; iA++) {
+	    ArrayList<Triangle3D> objectA = getAllTrianglesFromObject(iA);
+	    ArrayList<float[]>    boxesA  = getEpsilonBox(objectA,10.0);
+	    for (int iB = iA+1; iB < rootMeshRotates.getChildren().size(); iB++) {
+		ArrayList<Triangle3D> objectB = getAllTrianglesFromObject(iB);
+		ArrayList<float[]>    boxesB  = getEpsilonBox(objectB,10.0);
+		ArrayList<float[]>    overlaps= getOverlaps(boxesA,boxesB);
+		
+		for(float[] overlap : overlaps) {
+		    returnValue = isCollisionRecursive(objectA,objectB,overlap,iA,iB,0);
+		    if(returnValue) {break;}
+		}  
+	    }	
+	}
+	return returnValue;
+    }
   
   boolean isCollisionOld(int iA, int iB) {
       MeshView shapeA = (MeshView)rootMeshRotates.getChildren().get(iA);
@@ -559,9 +637,6 @@ public class ViewSTL {
       return false;
   }
   
-  
- 
-  
   boolean isCollision(ArrayList<Triangle3D> objectA, ArrayList<Triangle3D> objectB, int iA, int iB) {
 	  //we need iA and iB purely to make the objects red
 		PrintStream originalSerr = System.err;
@@ -590,10 +665,12 @@ public class ViewSTL {
       return false;
   }
 
-  boolean isCollisionRecursive(ArrayList<Triangle3D> objectA, ArrayList<Triangle3D> objectB, float minX, float maxX, 
-		  float minY, float maxY, float minZ, float maxZ, int iA, int iB, int rec_depth){
-	  //performs octree algorithm until a small set of triangles can be operated upon by brute force, i.e. greatly reducing the search space
-	  //first define our new midpoints
+  boolean isCollisionRecursive(ArrayList<Triangle3D> objectA, ArrayList<Triangle3D> objectB, float[] box, int iA, int iB, int rec_depth){
+      float minX = box[0]; float maxX = box[1];
+      float minY = box[2]; float maxY = box[3];
+      float minZ = box[4]; float maxZ = box[5];
+      //performs octree algorithm until a small set of triangles can be operated upon by brute force, i.e. greatly reducing the search space
+      //first define our new midpoints
 	  rec_depth += 1;
 	  float midX = (minX + maxX) / 2;
 	  float midY = (minY + maxY) / 2;
@@ -633,7 +710,7 @@ public class ViewSTL {
 //		  System.out.println("number of triangles from A  in box with dimensions [" + xCoords[0] + "," + xCoords[1] + "," + yCoords[0] + "," + yCoords[1] + "," + zCoords[0] + "," + zCoords[1] + "] is: " + array_A.size());
 //		  System.out.println("number of triangles from B  in box with dimensions [" + xCoords[0] + "," + xCoords[1] + "," + yCoords[0] + "," + yCoords[1] + "," + zCoords[0] + "," + zCoords[1] + "] is: " + array_B.size());
 		  if(product != 0){
-			  if(product <= 10000 || rec_depth >= 5){
+			  if(product <= 1000 || rec_depth >= 5){
 				  found_collision = isCollision(array_A,array_B,iA,iB);
 			  }else{
 				  found_collision = isCollisionRecursive(array_A,array_B,xCoords[0],xCoords[1],yCoords[0],yCoords[1],zCoords[0],zCoords[1],iA,iB,rec_depth);

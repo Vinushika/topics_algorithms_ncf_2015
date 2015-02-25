@@ -81,6 +81,7 @@ public class ViewSTL {
   private   PointLight   pointLight2;
   private   PointLight   pointLight3;
   private AmbientLight ambientLight ;
+  CollisionsMemoizer collisionsMemoizer;
 
   ViewSTL() {
       rootMeshRotates = new Group();
@@ -181,6 +182,8 @@ public class ViewSTL {
   public void start(Stage primaryStage) {
     this.primaryStage = primaryStage;
     AnchorPane pane = new AnchorPane();
+    collisionsMemoizer = new CollisionsMemoizer();
+
     
     HBox hBox = new HBox(5); // 5 adds that space between nodes
     ToggleButton    wireFrameButton = new ToggleButton("Wireframe");
@@ -571,24 +574,38 @@ public class ViewSTL {
 	  MeshView shapeB = (MeshView)rootMeshRotates.getChildren().get(iB);
 	  //after this we don't need it
       for (     int iFaceA = 0; iFaceA < objectA.size(); iFaceA++ ) {
-    	  Triangle3D a = objectA.get(iFaceA);
-          for ( int iFaceB = 0; iFaceB < objectB.size(); iFaceB++ ) {
+          Triangle3D a = objectA.get(iFaceA);
+          for (int iFaceB = 0; iFaceB < objectB.size(); iFaceB++) {
               Triangle3D b = objectB.get(iFaceB);
-              if ( a.isCollision(b) ) {
-                  System.out.println("COLLISION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                  PhongMaterial sample = new PhongMaterial(collsnColor);
-                  sample.setSpecularColor(lightColor);
-                  sample.setSpecularPower(16);
-                  shapeA.setMaterial(sample);
-                  shapeB.setMaterial(sample);
-                  System.setErr(originalSerr);
-                  return true;
+              Boolean cp = collisionsMemoizer.checkPair(a, b);
+              if (cp == null) {
+                  if (a.isCollision(b)) {
+                      reportCollision(shapeA, shapeB);
+                      collisionsMemoizer.addPair(a, b, true);
+                      return true;
+                  } else {
+                      collisionsMemoizer.addPair(a, b, false);
+                  }
+              } else {
+                  if (cp) {
+                      return true;
+                  }
               }
           }
       }
       System.setErr(originalSerr);
       return false;
   }
+  
+      public void reportCollision(MeshView shapeA,MeshView shapeB){
+        System.out.println("COLLISION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        PhongMaterial sample = new PhongMaterial(collsnColor);
+        sample.setSpecularColor(lightColor);
+        sample.setSpecularPower(16);
+        shapeA.setMaterial(sample);
+        shapeB.setMaterial(sample);
+        System.setErr(System.err);
+    }
 
   boolean isCollisionRecursive(ArrayList<Triangle3D> objectA, ArrayList<Triangle3D> objectB, float minX, float maxX, 
 		  float minY, float maxY, float minZ, float maxZ, int iA, int iB, int rec_depth){
